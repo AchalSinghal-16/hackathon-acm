@@ -1,10 +1,19 @@
 import os, sqlite3, secrets, time
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, session, flash, g, abort
+from flask import Flask, render_template, request, redirect, url_for, session, flash, g, abort, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from content import SITE
 from seed_events import init_event_tables
+from seed_prizes import init_prize_tables
+from seed_about_faq import init_about_faq_tables
+from admin_core import (
+    init_admin_tables,
+    admin_required,
+    log_admin_action,
+    generate_teams_csv,
+    ADMIN_SECRET_SLUG
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
@@ -17,15 +26,6 @@ UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads", "payments")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 SUBMISSION_FOLDER = os.path.join(app.root_path, "static", "uploads", "submissions")
 os.makedirs(SUBMISSION_FOLDER, exist_ok=True)
-
-try:
-    from authlib.integrations.flask_client import OAuth
-    google = OAuth(app).register("google", client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
-        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-        client_kwargs={"scope": "openid email profile"}) if os.environ.get("GOOGLE_CLIENT_ID") else None
-except ImportError:
-    google = None
 
 def db():
     if "db" not in g:
@@ -78,6 +78,9 @@ with sqlite3.connect(DB) as c:
     );
     """)
 init_event_tables(DB)
+init_prize_tables(DB)
+init_about_faq_tables(DB)
+init_admin_tables(DB)
 
 def generate_team_credentials():
     with sqlite3.connect(DB) as c:
@@ -157,39 +160,6 @@ def login():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    return redirect(url_for("team"))
-
-@app.route("/login/google")
-def login_google():
-    if not google:
-        flash("Google login isn’t set up yet. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable.")
-        return redirect(url_for("login"))
-    return google.authorize_redirect(url_for("google_cb", _external=True))
-
-@app.route("/auth/google/callback")
-def google_cb():
-    if not google:
-        return redirect(url_for("login"))
-    info = google.authorize_access_token().get("userinfo")
-    e = info["email"].lower()
-    if not valid_email(e):
-        flash("Use your college email ID.")
-        return redirect(url_for("login"))
-    u = db().execute("SELECT * FROM users WHERE email=?", (e,)).fetchone()
-    if not u:
-        cur = db().execute("INSERT INTO users(name,email,pw) VALUES(?,?,?)",
-                          (info.get("name", e), e, generate_password_hash(secrets.token_hex(16))))
-        db().commit()
-        uid = cur.lastrowid
-    else:
-        uid = u["id"]
-    session.clear()
-    session["uid"] = uid
-
-    t = db().execute("SELECT id FROM teams WHERE owner=?", (uid,)).fetchone()
-    if t:
-        session["team_id"] = t["id"]
-        return redirect(url_for("dashboard"))
     return redirect(url_for("team"))
 
 @app.route("/forgot-password")
@@ -507,11 +477,427 @@ def submit_round(round_id):
     flash(f"Submission for {round_data['title']} saved successfully!")
     return redirect(url_for("events"))
 
+@app.route("/prizes")
+def prizes():
+    overview_rows = db().execute("SELECT key, value FROM prize_overview").fetchall()
+    overview = {r["key"]: r["value"] for r in overview_rows}
+    podium_rows = db().execute("SELECT * FROM prize_podium ORDER BY order_idx, id").fetchall()
+    podium = []
+    for r in podium_rows:
+        d = dict(r)
+        d["perks_list"] = [p.strip() for p in (r["perks"] or "").split("\n") if p.strip()]
+        podium.append(d)
+    categories = db().execute("SELECT * FROM prize_categories ORDER BY order_idx, id").fetchall()
+    perks = db().execute("SELECT * FROM prize_perks ORDER BY order_idx, id").fetchall()
+    rules = db().execute("SELECT * FROM prize_rules ORDER BY order_idx, id").fetchall()
+
+    t = current_team()
+    return render_template("prizes.html",
+                           overview=overview,
+                           podium=podium,
+                           categories=[dict(x) for x in categories],
+                           perks=[dict(x) for x in perks],
+                           rules=[dict(x) for x in rules],
+                           team=t,
+                           body="inner")
+
+@app.route("/about")
+def about():
+    about_rows = db().execute("SELECT key, value FROM about_info").fetchall()
+    info = {r["key"]: r["value"] for r in about_rows}
+    pillars = db().execute("SELECT * FROM about_pillars ORDER BY order_idx, id").fetchall()
+    facilities = db().execute("SELECT * FROM about_facilities ORDER BY order_idx, id").fetchall()
+    t = current_team()
+    return render_template("about.html",
+                           info=info,
+                           pillars=[dict(x) for x in pillars],
+                           facilities=[dict(x) for x in facilities],
+                           team=t,
+                           body="inner")
+
+@app.route("/faq")
+def faq():
+    categories = db().execute("SELECT * FROM faq_categories ORDER BY order_idx, id").fetchall()
+    items = db().execute("SELECT * FROM faq_items ORDER BY order_idx, id").fetchall()
+    faqs_by_cat = {}
+    for item in items:
+        faqs_by_cat.setdefault(item["category_slug"], []).append(dict(item))
+    t = current_team()
+    return render_template("faq.html",
+                           categories=[dict(x) for x in categories],
+                           faqs_by_cat=faqs_by_cat,
+                           all_faqs=[dict(x) for x in items],
+                           team=t,
+                           body="inner")
+
+# ==========================================
+# STEALTH ADMIN OPS GATEWAY & AUDIT SYSTEM
+# ==========================================
+
+@app.route("/admin")
+@app.route("/admin/<path:subpath>")
+def trap_admin(subpath=None):
+    """Trap route: completely hides the existence of the admin panel from ordinary users and attackers."""
+    abort(404)
+
+@app.route(f"/{ADMIN_SECRET_SLUG}", methods=["GET", "POST"])
+def admin_login():
+    if session.get("is_admin"):
+        return redirect(f"/{ADMIN_SECRET_SLUG}/dashboard")
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        row = db().execute("SELECT * FROM admins WHERE username=?", (username,)).fetchone()
+        if row and check_password_hash(row["pw"], password):
+            session.clear()  # Clear existing user/team session to avoid state bleed
+            session["is_admin"] = True
+            session["admin_id"] = row["id"]
+            session["admin_user"] = row["username"]
+            session["admin_role"] = row["role"]
+            db().execute("UPDATE admins SET last_login=CURRENT_TIMESTAMP WHERE id=?", (row["id"],))
+            db().commit()
+            log_admin_action(db(), row["username"], "LOGIN", "SYSTEM", "0", "Admin authenticated via ops gateway")
+            return redirect(f"/{ADMIN_SECRET_SLUG}/dashboard")
+        flash("Invalid security key or passphrase.")
+    return render_template("admin_login.html", slug=ADMIN_SECRET_SLUG)
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/logout")
+def admin_logout():
+    if session.get("is_admin"):
+        log_admin_action(db(), session.get("admin_user", "unknown"), "LOGOUT", "SYSTEM", "0")
+    session.pop("is_admin", None)
+    session.pop("admin_id", None)
+    session.pop("admin_user", None)
+    session.pop("admin_role", None)
+    flash("Signed out of Organizer Ops Center.")
+    return redirect("/")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/dashboard")
+@admin_required
+def admin_dashboard():
+    total_teams = db().execute("SELECT count(*) FROM teams").fetchone()[0]
+    pending_payments = db().execute("SELECT count(*) FROM teams WHERE payment_status='Pending Verification'").fetchone()[0]
+    verified_teams = db().execute("SELECT count(*) FROM teams WHERE payment_status='Verified'").fetchone()[0]
+    total_members = db().execute("SELECT count(*) FROM members").fetchone()[0]
+    
+    stats = {
+        "total_teams": total_teams,
+        "pending_payments": pending_payments,
+        "verified_teams": verified_teams,
+        "total_members": total_members
+    }
+    
+    tracks = db().execute("SELECT title FROM event_tracks ORDER BY order_idx ASC").fetchall()
+    track_counts = {}
+    for trk in tracks:
+        cnt = db().execute("SELECT count(*) FROM teams WHERE domain=?", (trk["title"],)).fetchone()[0]
+        track_counts[trk["title"]] = cnt
+        
+    pending_teams = db().execute("""
+        SELECT t.*, 
+               m.fname || ' ' || m.lname as leader_name,
+               m.email as leader_email,
+               m.phone as leader_phone,
+               m.college as leader_college
+        FROM teams t
+        LEFT JOIN members m ON m.team = t.id AND m.is_leader = 1
+        WHERE t.payment_status = 'Pending Verification'
+        ORDER BY t.id DESC
+    """).fetchall()
+    
+    recent_teams = db().execute("""
+        SELECT t.*, 
+               m.fname || ' ' || m.lname as leader_name,
+               m.college as leader_college
+        FROM teams t
+        LEFT JOIN members m ON m.team = t.id AND m.is_leader = 1
+        ORDER BY t.id DESC LIMIT 8
+    """).fetchall()
+    
+    return render_template(
+        "admin_dashboard.html",
+        slug=ADMIN_SECRET_SLUG,
+        active_tab="dashboard",
+        pending_payments_count=pending_payments,
+        stats=stats,
+        track_counts=track_counts,
+        pending_teams=pending_teams,
+        recent_teams=recent_teams
+    )
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/payments")
+@admin_required
+def admin_payments():
+    status_filter = request.args.get("status", "all").lower()
+    q = request.args.get("q", "").strip()
+    
+    c_all = db().execute("SELECT count(*) FROM teams").fetchone()[0]
+    c_pending = db().execute("SELECT count(*) FROM teams WHERE payment_status='Pending Verification'").fetchone()[0]
+    c_verified = db().execute("SELECT count(*) FROM teams WHERE payment_status='Verified'").fetchone()[0]
+    c_rejected = db().execute("SELECT count(*) FROM teams WHERE payment_status='Rejected'").fetchone()[0]
+    counts = {"all": c_all, "pending": c_pending, "verified": c_verified, "rejected": c_rejected}
+    
+    query_sql = """
+        SELECT t.*,
+               m.fname || ' ' || m.lname as leader_name,
+               m.email as leader_email,
+               m.phone as leader_phone,
+               m.college as leader_college
+        FROM teams t
+        LEFT JOIN members m ON m.team = t.id AND m.is_leader = 1
+        WHERE 1=1
+    """
+    params = []
+    if status_filter == "pending":
+        query_sql += " AND t.payment_status = 'Pending Verification'"
+    elif status_filter == "verified":
+        query_sql += " AND t.payment_status = 'Verified'"
+    elif status_filter == "rejected":
+        query_sql += " AND t.payment_status = 'Rejected'"
+        
+    if q:
+        query_sql += " AND (t.team_id LIKE ? OR t.name LIKE ? OR m.fname LIKE ? OR m.lname LIKE ? OR m.email LIKE ? OR m.phone LIKE ?)"
+        like_q = f"%{q}%"
+        params.extend([like_q, like_q, like_q, like_q, like_q, like_q])
+        
+    query_sql += " ORDER BY t.id DESC"
+    teams = db().execute(query_sql, params).fetchall()
+    
+    return render_template(
+        "admin_payments.html",
+        slug=ADMIN_SECRET_SLUG,
+        active_tab="payments",
+        pending_payments_count=c_pending,
+        counts=counts,
+        teams=teams,
+        current_status=status_filter,
+        query=q
+    )
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/payment/<int:team_id>/<action>", methods=["POST"])
+@admin_required
+def admin_payment_action(team_id, action):
+    team = db().execute("SELECT * FROM teams WHERE id=?", (team_id,)).fetchone()
+    if not team:
+        flash("Team not found.")
+        return redirect(f"/{ADMIN_SECRET_SLUG}/payments")
+        
+    if action == "approve":
+        db().execute("UPDATE teams SET payment_status='Verified' WHERE id=?", (team_id,))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "PAYMENT_APPROVE", "TEAM", team_id, f"Approved ₹50 payment for team {team['team_id']}")
+        flash(f"Payment approved for Team {team['team_id']} ({team['name']}).")
+    elif action == "reject":
+        db().execute("UPDATE teams SET payment_status='Rejected' WHERE id=?", (team_id,))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "PAYMENT_REJECT", "TEAM", team_id, f"Rejected ₹50 payment for team {team['team_id']}")
+        flash(f"Payment rejected for Team {team['team_id']} ({team['name']}).")
+    elif action == "revert":
+        db().execute("UPDATE teams SET payment_status='Pending Verification' WHERE id=?", (team_id,))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "PAYMENT_REVERT", "TEAM", team_id, f"Reverted payment status for team {team['team_id']}")
+        flash(f"Team {team['team_id']} reverted to Pending Verification.")
+        
+    ref = request.referrer
+    if ref and ADMIN_SECRET_SLUG in ref:
+        return redirect(ref)
+    return redirect(f"/{ADMIN_SECRET_SLUG}/payments")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/teams")
+@admin_required
+def admin_teams():
+    q = request.args.get("q", "").strip()
+    track = request.args.get("track", "").strip()
+    
+    pending_payments = db().execute("SELECT count(*) FROM teams WHERE payment_status='Pending Verification'").fetchone()[0]
+    tracks = [r["title"] for r in db().execute("SELECT title FROM event_tracks ORDER BY order_idx ASC").fetchall()]
+    
+    sql = """
+        SELECT t.*, 
+               m.fname || ' ' || m.lname as leader_name,
+               m.college as leader_college
+        FROM teams t
+        LEFT JOIN members m ON m.team = t.id AND m.is_leader = 1
+        WHERE 1=1
+    """
+    params = []
+    if track:
+        sql += " AND t.domain = ?"
+        params.append(track)
+    if q:
+        sql += " AND (t.team_id LIKE ? OR t.name LIKE ? OR m.fname LIKE ? OR m.lname LIKE ? OR m.college LIKE ?)"
+        like_q = f"%{q}%"
+        params.extend([like_q, like_q, like_q, like_q, like_q])
+        
+    sql += " ORDER BY t.id DESC"
+    raw_teams = db().execute(sql, params).fetchall()
+    
+    teams = []
+    for rt in raw_teams:
+        t_dict = dict(rt)
+        members = db().execute("SELECT * FROM members WHERE team=? ORDER BY is_leader DESC, id ASC", (rt["id"],)).fetchall()
+        t_dict["members"] = members
+        teams.append(t_dict)
+        
+    return render_template(
+        "admin_teams.html",
+        slug=ADMIN_SECRET_SLUG,
+        active_tab="teams",
+        pending_payments_count=pending_payments,
+        teams=teams,
+        tracks=tracks,
+        current_track=track,
+        query=q
+    )
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/submissions")
+@admin_required
+def admin_submissions():
+    round_filter = request.args.get("round", "all")
+    pending_payments = db().execute("SELECT count(*) FROM teams WHERE payment_status='Pending Verification'").fetchone()[0]
+    
+    rounds = db().execute("SELECT * FROM event_rounds ORDER BY round_num ASC").fetchall()
+    
+    sql = """
+        SELECT s.*, 
+               t.team_id as team_code,
+               t.name as team_name,
+               t.domain,
+               r.round_num,
+               r.title as round_title,
+               r.stage_name
+        FROM team_submissions s
+        JOIN teams t ON t.id = s.team_id
+        JOIN event_rounds r ON r.id = s.round_id
+        WHERE 1=1
+    """
+    params = []
+    if round_filter != "all" and round_filter.isdigit():
+        sql += " AND r.round_num = ?"
+        params.append(int(round_filter))
+        
+    sql += " ORDER BY s.submitted_at DESC"
+    submissions = db().execute(sql, params).fetchall()
+    total_submissions = db().execute("SELECT count(*) FROM team_submissions").fetchone()[0]
+    
+    return render_template(
+        "admin_submissions.html",
+        slug=ADMIN_SECRET_SLUG,
+        active_tab="submissions",
+        pending_payments_count=pending_payments,
+        submissions=submissions,
+        rounds=rounds,
+        current_round=round_filter,
+        total_submissions=total_submissions
+    )
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/submissions/<int:sub_id>/evaluate", methods=["POST"])
+@admin_required
+def admin_evaluate_submission(sub_id):
+    new_status = request.form.get("status", "Submitted")
+    remarks = request.form.get("remarks", "").strip()
+    db().execute("UPDATE team_submissions SET status=?, remarks=?, updated_at=CURRENT_TIMESTAMP WHERE id=?", (new_status, remarks, sub_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EVALUATE_SUBMISSION", "SUBMISSION", sub_id, f"Set status to {new_status}")
+    flash(f"Submission #{sub_id} evaluation updated successfully.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/submissions")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content")
+@admin_required
+def admin_content():
+    pending_payments = db().execute("SELECT count(*) FROM teams WHERE payment_status='Pending Verification'").fetchone()[0]
+    
+    event_info_rows = db().execute("SELECT key, value FROM event_info").fetchall()
+    event_info = {r["key"]: r["value"] for r in event_info_rows}
+    
+    prize_ov_rows = db().execute("SELECT key, value FROM prize_overview").fetchall()
+    prize_overview = {r["key"]: r["value"] for r in prize_ov_rows}
+    podium = db().execute("SELECT * FROM prize_podium ORDER BY order_idx ASC").fetchall()
+    
+    faqs = db().execute("SELECT * FROM faq_items ORDER BY order_idx ASC, id ASC").fetchall()
+    
+    return render_template(
+        "admin_content.html",
+        slug=ADMIN_SECRET_SLUG,
+        active_tab="content",
+        pending_payments_count=pending_payments,
+        event_info=event_info,
+        prize_overview=prize_overview,
+        podium=podium,
+        faqs=faqs
+    )
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/event-info", methods=["POST"])
+@admin_required
+def admin_save_event_info():
+    keys = ["tagline", "dates", "venue", "prize_pool", "team_size", "mode", "about_p1"]
+    for k in keys:
+        if k in request.form:
+            val = request.form.get(k, "").strip()
+            db().execute("INSERT OR REPLACE INTO event_info(key, value) VALUES(?, ?)", (k, val))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "UPDATE_CONTENT", "EVENT_INFO", "0")
+    flash("Event details saved and updated live on the site.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/prizes", methods=["POST"])
+@admin_required
+def admin_save_prizes():
+    keys = ["total_pool", "cash_pool", "perks_val"]
+    for k in keys:
+        if k in request.form:
+            val = request.form.get(k, "").strip()
+            db().execute("INSERT OR REPLACE INTO prize_overview(key, value) VALUES(?, ?)", (k, val))
+    
+    podium_rows = db().execute("SELECT id FROM prize_podium").fetchall()
+    for p in podium_rows:
+        f_key = f"podium_{p['id']}"
+        if f_key in request.form:
+            val = request.form.get(f_key, "").strip()
+            db().execute("UPDATE prize_podium SET amount=? WHERE id=?", (val, p["id"]))
+            
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "UPDATE_CONTENT", "PRIZES", "0")
+    flash("Prize pool amounts saved and updated live on /prizes.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/faq/add", methods=["POST"])
+@admin_required
+def admin_add_faq():
+    cat = request.form.get("category_slug", "general").strip()
+    q = request.form.get("question", "").strip()
+    a = request.form.get("answer", "").strip()
+    if q and a:
+        db().execute("INSERT INTO faq_items(category_slug, question, answer, order_idx) VALUES(?, ?, ?, 99)", (cat, q, a))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_FAQ", "FAQ", "0", q)
+        flash("New FAQ item added successfully.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/faq/delete/<int:faq_id>", methods=["POST"])
+@admin_required
+def admin_delete_faq(faq_id):
+    db().execute("DELETE FROM faq_items WHERE id=?", (faq_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_FAQ", "FAQ", faq_id)
+    flash("FAQ item deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/export/teams")
+@admin_required
+def admin_export_teams():
+    csv_data = generate_teams_csv(db())
+    log_admin_action(db(), session.get("admin_user"), "EXPORT_CSV", "TEAMS", "0", "Exported all teams to CSV")
+    filename = f"CodeNite2027_Teams_Roster_{int(time.time())}.csv"
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-disposition": f"attachment; filename={filename}"}
+    )
+
 @app.route("/<page>")
 def info(page):
-    if page not in ("prizes", "about", "faq"):
-        abort(404)
-    return render_template("info.html", page=page, body="inner")
+    abort(404)
 
 if __name__ == "__main__":
     app.run(debug=True)

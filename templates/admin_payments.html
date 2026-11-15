@@ -1,0 +1,335 @@
+{% extends 'admin_base.html' %}
+{% block title %}Payment Verifications · Strategy 2{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Filter Pills */
+  .filter-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .filter-pill {
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--muted);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .filter-pill:hover {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+  }
+  .filter-pill.active {
+    background: rgba(168,85,247,0.25);
+    border-color: rgba(168,85,247,0.6);
+    color: #fff;
+  }
+  .filter-badge {
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+  }
+  .filter-pill.active .filter-badge {
+    background: var(--primary);
+  }
+
+  /* Receipt Thumbnail & Preview */
+  .receipt-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1.5px solid rgba(168,85,247,0.4);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: #000;
+  }
+  .receipt-thumb:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 15px rgba(168,85,247,0.4);
+    border-color: #c084fc;
+  }
+
+  /* Modal Lightbox */
+  .receipt-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(4, 2, 10, 0.92);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .receipt-modal.active {
+    display: flex;
+  }
+  .receipt-modal-card {
+    max-width: 650px;
+    width: 100%;
+    background: #140d28;
+    border: 1.5px solid rgba(168,85,247,0.4);
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+  }
+  .receipt-modal-img {
+    width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #080410;
+  }
+  .receipt-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .receipt-modal-close:hover {
+    background: #ef4444;
+  }
+  .search-input {
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(168,85,247,0.3);
+    border-radius: 12px;
+    padding: 9px 14px;
+    color: #fff;
+    font-size: 13.5px;
+    width: 280px;
+    outline: none;
+  }
+  .search-input:focus {
+    border-color: #c084fc;
+    box-shadow: 0 0 0 3px rgba(168,85,247,0.25);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+  <div>
+    <h1 style="font-size:26px;font-weight:800;color:#fff;">₹50 UPI Payment Verification</h1>
+    <p style="font-size:14px;color:var(--muted);margin-top:4px;">
+      Strategy 2 Payment Workflow: Review uploaded UPI transaction screenshots, verify team legitimacy, and approve or reject registrations.
+    </p>
+  </div>
+  
+  <form method="get" action="/{{ slug }}/payments" style="display:flex;gap:10px;align-items:center;">
+    <input type="hidden" name="status" value="{{ current_status }}">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by Team ID, Name, Leader..." class="search-input">
+    <button type="submit" class="btn-export" style="padding:9px 16px;font-size:13px;">Search</button>
+    {% if query %}
+    <a href="/{{ slug }}/payments?status={{ current_status }}" style="font-size:12px;color:var(--muted);text-decoration:underline;">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- FILTER TABS -->
+<div class="filter-pills">
+  <a href="/{{ slug }}/payments?status=all{% if query %}&q={{ query }}{% endif %}" class="filter-pill {{ 'active' if current_status == 'all' }}">
+    All Registrations
+    <span class="filter-badge">{{ counts.all }}</span>
+  </a>
+  <a href="/{{ slug }}/payments?status=pending{% if query %}&q={{ query }}{% endif %}" class="filter-pill {{ 'active' if current_status == 'pending' }}">
+    ⏳ Pending Verification
+    <span class="filter-badge" style="background:#f59e0b;color:#000;font-weight:800;">{{ counts.pending }}</span>
+  </a>
+  <a href="/{{ slug }}/payments?status=verified{% if query %}&q={{ query }}{% endif %}" class="filter-pill {{ 'active' if current_status == 'verified' }}">
+    ✓ Verified &amp; Approved
+    <span class="filter-badge" style="background:#10b981;">{{ counts.verified }}</span>
+  </a>
+  <a href="/{{ slug }}/payments?status=rejected{% if query %}&q={{ query }}{% endif %}" class="filter-pill {{ 'active' if current_status == 'rejected' }}">
+    ✕ Rejected
+    <span class="filter-badge" style="background:#ef4444;">{{ counts.rejected }}</span>
+  </a>
+</div>
+
+<!-- PAYMENTS LIST -->
+<div class="ops-card">
+  <div class="ops-card-head">
+    <h3 class="ops-card-title">
+      Showing {{ teams|length }} {% if current_status != 'all' %}{{ current_status.title() }}{% endif %} Registrations
+    </h3>
+    <div style="font-size:13px;color:var(--muted);">
+      Total Collected: <b style="color:#6ee7b7;">₹{{ counts.verified * 50 }}</b> (from {{ counts.verified }} verified squads)
+    </div>
+  </div>
+
+  {% if teams %}
+  <div class="ops-table-wrap">
+    <table class="ops-table">
+      <thead>
+        <tr>
+          <th>Team ID</th>
+          <th>Team &amp; Track</th>
+          <th>Leader Information</th>
+          <th>₹50 Screenshot</th>
+          <th>Status</th>
+          <th>Registered At</th>
+          <th>Moderation Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in teams %}
+        <tr>
+          <td>
+            <b style="color:#c084fc;font-family:'JetBrains Mono',monospace;font-size:14px;">{{ t.team_id }}</b>
+          </td>
+          <td>
+            <div style="font-weight:800;color:#fff;font-size:14.5px;">{{ t.name }}</div>
+            <div style="margin-top:4px;">
+              <span style="font-size:11.5px;background:rgba(168,85,247,0.18);border:1px solid rgba(168,85,247,0.3);color:#d8b4fe;padding:2px 8px;border-radius:8px;font-weight:600;">
+                {{ t.domain }}
+              </span>
+            </div>
+          </td>
+          <td>
+            <div style="font-weight:700;color:#e2d9f3;">{{ t.leader_name or '—' }}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+              {{ t.leader_email or '' }}
+            </div>
+            <div style="font-size:12px;color:var(--muted);">
+              📞 {{ t.leader_phone or '—' }}
+            </div>
+            <div style="font-size:11.5px;color:#a78bfa;margin-top:2px;">
+              🏛️ {{ t.leader_college or '—' }}
+            </div>
+          </td>
+          <td>
+            {% if t.payment_screenshot %}
+            <div style="display:flex;align-items:center;gap:10px;">
+              <img src="{{ url_for('static', filename=t.payment_screenshot) }}" 
+                   alt="Receipt" 
+                   class="receipt-thumb" 
+                   onclick="openModal('{{ url_for('static', filename=t.payment_screenshot) }}', '{{ t.team_id }}', '{{ t.name }}')">
+              <div>
+                <a href="{{ url_for('static', filename=t.payment_screenshot) }}" target="_blank" style="font-size:12px;color:#38bdf8;text-decoration:underline;">
+                  Open Full
+                </a>
+              </div>
+            </div>
+            {% else %}
+            <span style="font-size:12px;color:#f87171;background:rgba(239,68,68,0.15);padding:3px 8px;border-radius:6px;">No receipt uploaded</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if t.payment_status == 'Verified' %}
+            <span class="badge-verified">✓ Verified</span>
+            {% elif t.payment_status == 'Pending Verification' %}
+            <span class="badge-pending">⏳ Pending</span>
+            {% else %}
+            <span class="badge-rejected">✕ {{ t.payment_status }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--muted);white-space:nowrap;">
+            {{ t.created_at[:16] if t.created_at else '' }}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              {% if t.payment_status != 'Verified' %}
+              <form method="post" action="/{{ slug }}/payment/{{ t.id }}/approve" style="margin:0;">
+                <input type="hidden" name="csrf" value="{{ csrf() }}">
+                <button type="submit" class="btn-approve" title="Mark payment verified and approve team">
+                  ✓ Approve
+                </button>
+              </form>
+              {% endif %}
+              
+              {% if t.payment_status != 'Rejected' %}
+              <form method="post" action="/{{ slug }}/payment/{{ t.id }}/reject" style="margin:0;" onsubmit="return confirm('Reject payment for team {{ t.team_id }} ({{ t.name }})?');">
+                <input type="hidden" name="csrf" value="{{ csrf() }}">
+                <button type="submit" class="btn-reject" title="Reject payment screenshot">
+                  ✕ Reject
+                </button>
+              </form>
+              {% endif %}
+
+              {% if t.payment_status == 'Verified' %}
+              <form method="post" action="/{{ slug }}/payment/{{ t.id }}/revert" style="margin:0;">
+                <input type="hidden" name="csrf" value="{{ csrf() }}">
+                <button type="submit" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--muted);border-radius:10px;padding:6px 10px;font-size:11.5px;cursor:pointer;" title="Revert back to Pending">
+                  ↺ Revert
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px 20px;color:var(--muted);">
+    <div style="font-size:40px;margin-bottom:10px;">🔍</div>
+    <h4 style="font-size:17px;color:#fff;">No teams found</h4>
+    <p style="font-size:13.5px;margin-top:6px;">
+      No teams match the current status filter and search query.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- RECEIPT MODAL LIGHTBOX -->
+<div id="receiptModal" class="receipt-modal" onclick="closeModal(event)">
+  <div class="receipt-modal-card" onclick="event.stopPropagation()">
+    <button class="receipt-modal-close" onclick="closeModal()">✕</button>
+    <div style="margin-bottom:12px;">
+      <h4 id="modalTeamTitle" style="font-size:16px;color:#fff;font-weight:700;">UPI Receipt</h4>
+      <p id="modalTeamSub" style="font-size:12.5px;color:var(--muted);"></p>
+    </div>
+    <div style="text-align:center;">
+      <img id="modalImg" src="" alt="UPI Screenshot" class="receipt-modal-img">
+    </div>
+    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12px;color:var(--muted);">Check UPI Reference / UTR Number &amp; ₹50 amount</span>
+      <a id="modalDirectLink" href="#" target="_blank" class="btn-export" style="font-size:12px;padding:6px 14px;">
+        Open in Full Tab ↗
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal(imgSrc, teamId, teamName) {
+  document.getElementById('modalImg').src = imgSrc;
+  document.getElementById('modalDirectLink').href = imgSrc;
+  document.getElementById('modalTeamTitle').innerText = 'Receipt · ' + teamId;
+  document.getElementById('modalTeamSub').innerText = teamName + ' — ₹50 Registration Fee Screenshot';
+  document.getElementById('receiptModal').classList.add('active');
+}
+function closeModal(e) {
+  document.getElementById('receiptModal').classList.remove('active');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+{% endblock %}

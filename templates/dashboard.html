@@ -3,7 +3,7 @@
 
   {% if team %}
   <!-- 1. TEAM HEADER CARD -->
-  <div class="reg-card" style="box-shadow:0 14px 40px rgba(109,40,217,.1);padding:32px;">
+  <div class="reg-card dash-header-card" style="box-shadow:0 14px 40px rgba(109,40,217,.1);padding:32px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
       <div>
         <span class="reg-badge" style="margin-bottom:8px;">{{ icon('trophy') }} {{ team.domain or 'General' }}</span>
@@ -20,7 +20,7 @@
     </div>
 
     <!-- CREDENTIALS & PAYMENT STATUS BAR -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:24px;padding-top:22px;border-top:1.5px solid #f0eaff;">
+    <div class="dash-stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:24px;padding-top:22px;border-top:1.5px solid #f0eaff;">
       
       <!-- TEAM ID (LOCKED) -->
       <div class="dash-stat-box">
@@ -59,7 +59,7 @@
   </div>
 
   <!-- 2. TEAM MEMBERS ROSTER -->
-  <div style="display:flex;justify-content:space-between;align-items:center;margin:32px 0 16px;flex-wrap:wrap;gap:12px;">
+  <div class="dash-members-header" style="display:flex;justify-content:space-between;align-items:center;margin:32px 0 16px;flex-wrap:wrap;gap:12px;">
     <div>
       <h2 style="font-size:24px;font-weight:800;color:#0f0b24;">
         👥 Team Members ({{ members|length }}/6)
@@ -78,7 +78,7 @@
   </div>
 
   <!-- MEMBERS GRID -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:20px;">
+  <div class="dash-members-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:20px;">
     {% for m in members %}
     <div class="reg-card member-dash-card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:space-between;">
       <div>
@@ -171,7 +171,7 @@
       <p style="font-size:13px;color:#6b5d92;margin-bottom:16px;">
         Note: Team ID, auto-generated Team Password, and Payment Screenshot are permanently locked and cannot be changed.
       </p>
-      <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <div class="dash-modal-actions" style="display:flex;justify-content:flex-end;gap:10px;">
         <button type="button" class="btn-cancel" onclick="closeModal('edit-team-modal')">Cancel</button>
         <button type="submit" class="btn-save">Save Changes</button>
       </div>
@@ -275,7 +275,7 @@
         </div>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
+      <div class="dash-modal-actions" style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
         <button type="button" class="btn-cancel" onclick="closeModal('edit-member-modal')">Cancel</button>
         <button type="submit" class="btn-save">Save Member Details</button>
       </div>
@@ -377,7 +377,7 @@
         </div>
       </div>
 
-      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
+      <div class="dash-modal-actions" style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
         <button type="button" class="btn-cancel" onclick="closeModal('add-member-modal')">Cancel</button>
         <button type="submit" class="btn-save">Add Teammate</button>
       </div>
@@ -419,6 +419,40 @@
 .btn-cancel{background:#f1f5f9;border:0;padding:10px 18px;border-radius:12px;font-weight:700;color:#475569;cursor:pointer;}
 .btn-save{background:var(--primary);border:0;padding:10px 22px;border-radius:12px;font-weight:700;color:#fff;cursor:pointer;}
 .btn-save:hover{filter:brightness(1.1);}
+
+@media (max-width:768px){
+  /* Dashboard Header */
+  .dash-header-card{padding:20px 16px!important;border-radius:20px!important;}
+  .dash-header-card h1{font-size:24px!important;}
+  .btn-action-edit{width:100%;justify-content:center;margin-top:8px;}
+  
+  /* Credentials row */
+  .dash-stats-grid{grid-template-columns:1fr!important;gap:10px!important;}
+  .dash-stat-box{padding:12px 14px;}
+  #dash-tid{font-size:18px!important;}
+  #dash-tpw{font-size:16px!important;}
+  
+  /* Members Section */
+  .dash-members-header{flex-direction:column!important;align-items:stretch!important;gap:10px!important;margin:24px 0 14px!important;}
+  .dash-members-header h2{font-size:20px!important;}
+  .btn-add-dash{width:100%;justify-content:center;padding:12px;font-size:14.5px;}
+  
+  /* Members Grid */
+  .dash-members-grid{grid-template-columns:1fr!important;gap:14px!important;}
+  .member-dash-card{padding:18px 14px!important;border-radius:18px!important;}
+  .member-dash-card h3{font-size:17px!important;}
+  .dash-member-details{font-size:13px;gap:5px;}
+  .dash-member-details span{width:88px;font-size:12px;}
+  
+  /* Modals */
+  .dash-modal{padding:10px;}
+  .dash-modal-card{padding:20px 14px;border-radius:20px;max-height:94vh;}
+  .dash-modal-head h3{font-size:18px;}
+  .dash-modal-card .form-grid.col-2,
+  .dash-modal-card .form-grid.col-3{grid-template-columns:1fr!important;gap:10px!important;}
+  .dash-modal-actions{display:flex;flex-direction:column-reverse;gap:8px;width:100%;}
+  .btn-save,.btn-cancel{width:100%;text-align:center;padding:12px;font-size:14.5px;}
+}
 </style>
 
 <script>

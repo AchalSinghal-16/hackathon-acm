@@ -592,10 +592,73 @@
 .btn-cta-sub:hover{background:#f5efff;}
 
 @media (max-width:768px){
-  .team-portal-card{padding:22px 18px;}
-  .event-nav-tabs{flex-wrap:nowrap;overflow-x:auto;}
-  .stepper-bar{justify-content:flex-start;gap:12px;}
-  .step-line{min-width:30px;}
+  .event-hero{padding:16px 8px 24px;margin-bottom:18px;}
+  .event-hero-badge{font-size:13px;padding:6px 14px;margin-bottom:10px;}
+  .event-hero-title{font-size:clamp(26px,8vw,34px);line-height:1.15;margin-bottom:8px;}
+  .event-hero-sub{font-size:14.5px;margin-bottom:14px;}
+  .event-stats-strip{gap:8px;}
+  .stat-pill{padding:6px 12px;font-size:12.5px;width:100%;max-width:280px;justify-content:center;}
+  
+  /* Team Portal Card */
+  .team-portal-card{padding:18px 14px;border-radius:20px;margin-bottom:26px;}
+  .portal-header{flex-direction:column;align-items:stretch;gap:12px;padding-bottom:16px;}
+  .portal-team-name{font-size:22px;}
+  .portal-meta{flex-direction:column;gap:4px;font-size:13px;}
+  .portal-status-wrap{flex-direction:column;align-items:stretch;gap:8px;}
+  .btn-portal-dash{width:100%;justify-content:center;}
+  
+  /* Stepper */
+  .stepper-wrap{padding:16px 12px;border-radius:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .stepper-bar{min-width:480px;justify-content:flex-start;gap:8px;padding-bottom:8px;}
+  .step-item{min-width:96px;}
+  .step-circle{width:36px;height:36px;font-size:14px;}
+  .step-label{font-size:12px;}
+  .step-sub{font-size:11px;}
+  .step-line{min-width:24px;margin:0 -6px 18px;}
+  
+  /* Rounds */
+  .round-card{padding:18px 14px;border-radius:18px;}
+  .round-card-header{flex-direction:column;align-items:flex-start;gap:8px;}
+  .round-card-title{font-size:18px;}
+  .round-desc{font-size:13.5px;}
+  .sub-preview-box{padding:14px 12px;border-radius:14px;}
+  .sub-preview-title{flex-direction:column;align-items:flex-start;gap:4px;font-size:13px;}
+  .sub-form-container{padding:16px 12px;border-radius:14px;}
+  .btn-submit-sub{width:100%;justify-content:center;font-size:14px;}
+  .btn-cancel-edit{width:100%;text-align:center;}
+  
+  /* Tabs */
+  .event-nav-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding-bottom:6px;scrollbar-width:none;}
+  .event-nav-tabs::-webkit-scrollbar{display:none;}
+  .event-tab-btn{padding:10px 14px;font-size:13.5px;border-radius:14px 14px 0 0;flex-shrink:0;}
+  
+  /* Sections */
+  .sec-head{margin-bottom:24px;}
+  .sec-title{font-size:clamp(24px,6vw,30px);}
+  .sec-sub{font-size:14px;}
+  
+  /* Schedule, Tracks, Rules, Judging, About */
+  .schedule-days-container,.tracks-grid,.rules-grid,.judging-grid,.about-grid{grid-template-columns:1fr;gap:16px;}
+  .schedule-day-column{padding:18px 14px;border-radius:18px;}
+  .day-header-pill{font-size:14px;padding:6px 16px;}
+  .track-card,.rule-card,.judge-card,.about-card{padding:18px 14px;border-radius:18px;}
+  .track-title{font-size:18px;}
+  .track-desc{font-size:13.5px;}
+  .ps-item{padding:10px;}
+  .ps-name{font-size:13.5px;}
+  .ps-desc{font-size:12px;}
+  .rule-category-title{font-size:16px;}
+  .rule-list li{font-size:13.5px;}
+  .judge-name{font-size:16px;}
+  .judge-weight{font-size:15px;padding:3px 10px;}
+  .about-card-title{font-size:18px;}
+  .about-text{font-size:14px;}
+  
+  /* CTA Box */
+  .event-cta-box{padding:28px 16px;border-radius:20px;margin:32px 0 10px;}
+  .event-cta-box h3{font-size:22px;}
+  .event-cta-box p{font-size:14px;margin-bottom:18px;}
+  .btn-cta-main,.btn-cta-sub{width:100%;justify-content:center;font-size:14.5px;padding:12px 20px;}
 }
 </style>
 

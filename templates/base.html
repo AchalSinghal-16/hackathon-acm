@@ -15,13 +15,9 @@
   <button class="menu-btn" aria-label="Menu" aria-expanded="false">{{ icon('menu') }}</button>
   <nav class="nav-links" id="links">
     {% for ic, label, href in C.nav %}<a href="{{ href }}" class="{{ 'on' if request.path == href or (href=='/' and request.path=='/login') }}">{{ icon(ic) }} {{ label }}</a>{% endfor %}
-    {% if me %}<a href="/dashboard">Dashboard</a><a href="/logout">Logout</a>{% endif %}
+    {% if me or my_team %}<a href="/dashboard">Dashboard</a><a href="/logout">Logout</a>{% endif %}
   </nav>
-  {% if request.path not in ('/', '/login', '/team-registration') %}
-  <a class="btn-reg" href="/register">{{ C.register_label }} {{ icon('arrow') }}</a>
-  {% else %}
   <div class="nav-spacer"></div>
-  {% endif %}
 </header>
 {% block main %}{% endblock %}
 </div>

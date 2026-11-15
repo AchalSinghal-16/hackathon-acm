@@ -1,0 +1,179 @@
+{% extends 'admin_base.html' %}
+{% block title %}Dashboard Overview{% endblock %}
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:26px;font-weight:800;color:#fff;">Organizer Command Center</h1>
+  <p style="font-size:14px;color:var(--muted);margin-top:4px;">Live telemetry, team registrations, payment approvals, and milestone deliverables for ACM CodeNite 2027.</p>
+</div>
+
+<!-- TOP METRIC CARDS -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:28px;">
+  <!-- TOTAL TEAMS -->
+  <div style="background:#130c25;border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;">Total Teams</div>
+    <div style="font-size:32px;font-weight:800;color:#fff;margin:6px 0 2px;">{{ stats.total_teams }}</div>
+    <div style="font-size:12px;color:#a78bfa;">Registered squads</div>
+  </div>
+
+  <!-- PENDING VERIFICATION (ACTION NEEDED) -->
+  <div style="background:#1a101f;border:1.5px solid rgba(245,158,11,.4);border-radius:18px;padding:20px;">
+    <div style="font-size:12px;font-weight:700;color:#fcd34d;text-transform:uppercase;letter-spacing:.6px;">Pending Payments</div>
+    <div style="font-size:32px;font-weight:800;color:#f59e0b;margin:6px 0 2px;">{{ stats.pending_payments }}</div>
+    <a href="/{{ slug }}/payments?status=pending" style="font-size:12px;color:#fcd34d;text-decoration:underline;">Review verification queue →</a>
+  </div>
+
+  <!-- VERIFIED TEAMS -->
+  <div style="background:#0c1a17;border:1.5px solid rgba(16,185,129,.4);border-radius:18px;padding:20px;">
+    <div style="font-size:12px;font-weight:700;color:#6ee7b7;text-transform:uppercase;letter-spacing:.6px;">Verified Teams</div>
+    <div style="font-size:32px;font-weight:800;color:#10b981;margin:6px 0 2px;">{{ stats.verified_teams }}</div>
+    <div style="font-size:12px;color:#6ee7b7;">Confirmed &amp; Approved</div>
+  </div>
+
+  <!-- TOTAL PARTICIPANTS -->
+  <div style="background:#130c25;border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;">Total Participants</div>
+    <div style="font-size:32px;font-weight:800;color:#38bdf8;margin:6px 0 2px;">{{ stats.total_members }}</div>
+    <div style="font-size:12px;color:var(--muted);">Students across India</div>
+  </div>
+
+  <!-- FUNDS COLLECTED -->
+  <div style="background:#130c25;border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;">Initial Verification Pool</div>
+    <div style="font-size:32px;font-weight:800;color:#e879f9;margin:6px 0 2px;">₹{{ stats.verified_teams * 50 }}</div>
+    <div style="font-size:12px;color:var(--muted);">₹50 fee collected</div>
+  </div>
+</div>
+
+<!-- TRACK DISTRIBUTION -->
+<div class="ops-card">
+  <div class="ops-card-head">
+    <h3 class="ops-card-title">🎯 Track Registration Breakdown</h3>
+    <span style="font-size:13px;color:var(--muted);">Distribution of registered teams by innovation domain</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+    {% for track, count in track_counts.items() %}
+    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 18px;">
+      <div style="font-size:12.5px;color:#c4b5fd;font-weight:600;">{{ track }}</div>
+      <div style="font-size:24px;font-weight:800;color:#fff;margin-top:4px;">{{ count }} <span style="font-size:13px;font-weight:500;color:var(--muted);">teams</span></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- QUICK ACTION: PENDING PAYMENTS QUEUE -->
+<div class="ops-card">
+  <div class="ops-card-head">
+    <h3 class="ops-card-title">
+      💳 Pending Payment Verification Queue
+      {% if pending_teams %}
+      <span class="badge-count" style="margin-left:8px;">{{ pending_teams|length }} Need Review</span>
+      {% endif %}
+    </h3>
+    <a href="/{{ slug }}/payments" class="btn-export" style="font-size:12.5px;padding:6px 14px;">View All Payments →</a>
+  </div>
+
+  {% if pending_teams %}
+  <div class="ops-table-wrap">
+    <table class="ops-table">
+      <thead>
+        <tr>
+          <th>Team ID</th>
+          <th>Team Name</th>
+          <th>Track</th>
+          <th>Leader Details</th>
+          <th>₹50 Screenshot</th>
+          <th>Registered At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in pending_teams[:5] %}
+        <tr>
+          <td><b style="color:#c084fc;">{{ t.team_id }}</b></td>
+          <td><b>{{ t.name }}</b></td>
+          <td><span style="font-size:12px;background:rgba(168,85,247,.15);padding:2px 8px;border-radius:8px;">{{ t.domain }}</span></td>
+          <td>
+            <b>{{ t.leader_name or '—' }}</b><br>
+            <span style="font-size:12px;color:var(--muted);">{{ t.leader_email or '' }} · {{ t.leader_phone or '' }}</span>
+          </td>
+          <td>
+            {% if t.payment_screenshot %}
+            <a href="{{ url_for('static', filename=t.payment_screenshot) }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;color:#38bdf8;text-decoration:underline;">
+              🖼️ View Receipt
+            </a>
+            {% else %}
+            <span style="color:#f87171;">No image</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12.5px;color:var(--muted);">{{ t.created_at[:16] if t.created_at else '' }}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <form method="post" action="/{{ slug }}/payment/{{ t.id }}/approve" style="margin:0;">
+                <input type="hidden" name="csrf" value="{{ csrf() }}">
+                <button type="submit" class="btn-approve">✓ Approve</button>
+              </form>
+              <form method="post" action="/{{ slug }}/payment/{{ t.id }}/reject" style="margin:0;" onsubmit="return confirm('Reject payment for Team {{ t.team_id }}?');">
+                <input type="hidden" name="csrf" value="{{ csrf() }}">
+                <button type="submit" class="btn-reject">✕ Reject</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:36px;color:var(--muted);">
+    <div style="font-size:36px;margin-bottom:8px;">🎉</div>
+    <h4 style="font-size:16px;color:#fff;">All Clear!</h4>
+    <p style="font-size:13.5px;margin-top:4px;">No teams are currently awaiting payment verification.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- RECENT TEAMS TABLE -->
+<div class="ops-card">
+  <div class="ops-card-head">
+    <h3 class="ops-card-title">👥 Recently Registered Teams</h3>
+    <a href="/{{ slug }}/teams" class="btn-export" style="font-size:12.5px;padding:6px 14px;">View Full Directory →</a>
+  </div>
+
+  <div class="ops-table-wrap">
+    <table class="ops-table">
+      <thead>
+        <tr>
+          <th>Team ID</th>
+          <th>Team Name</th>
+          <th>Domain / Track</th>
+          <th>Leader</th>
+          <th>College</th>
+          <th>Status</th>
+          <th>Registered</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in recent_teams %}
+        <tr>
+          <td><b style="color:#c084fc;">{{ t.team_id }}</b></td>
+          <td><b>{{ t.name }}</b></td>
+          <td>{{ t.domain }}</td>
+          <td>{{ t.leader_name or '—' }}</td>
+          <td>{{ t.leader_college or '—' }}</td>
+          <td>
+            {% if t.payment_status == 'Verified' %}
+            <span class="badge-verified">✓ Verified</span>
+            {% elif t.payment_status == 'Pending Verification' %}
+            <span class="badge-pending">⏳ Pending</span>
+            {% else %}
+            <span class="badge-rejected">✕ {{ t.payment_status }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--muted);">{{ t.created_at[:10] if t.created_at else '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'base.html' %}{% block main %}
+<div class="reg-container" style="max-width:1480px;padding-top:24px;">
+
+  <!-- ABOUT HERO BANNER -->
+  <div class="about-hero">
+    <div class="about-hero-badge">
+      {{ icon('info') }} ACM CodeNite 2027 · About the Hackathon
+    </div>
+    <h1 class="about-hero-title">
+      Empowering Innovators. <em>Building the Future.</em>
+    </h1>
+    <p class="about-hero-sub">
+      {{ info.get('subheadline', "Central India's flagship 36-hour offline hackathon hosted by the ACM Student Chapter at Madhav Institute of Technology & Science (MITS), Gwalior.") }}
+    </p>
+
+    <div class="about-stats-strip">
+      <div class="stat-pill">{{ icon('clock') }} <b>{{ info.get('stat_hours', '36') }} Continuous Hours</b></div>
+      <div class="stat-pill">{{ icon('trophy') }} <b>{{ info.get('stat_prize', '₹2,50,000+') }} Prize Pool</b></div>
+      <div class="stat-pill">{{ icon('users') }} <b>{{ info.get('stat_teams', '100+') }} Teams Across India</b></div>
+      <div class="stat-pill">{{ icon('sparkles') }} <b>{{ info.get('stat_mentors', '20+') }} Technical Mentors</b></div>
+      <div class="stat-pill">{{ icon('globe') }} <b>Offline @ MITS Campus</b></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: MISSION & HERITAGE (2-COL SPLIT) -->
+  <div class="sec-head" style="margin-top:36px;">
+    <span class="sec-badge">{{ icon('bolt') }} The Vision</span>
+    <h2 class="sec-title">Why <em>ACM CodeNite?</em></h2>
+    <p class="sec-sub">Bridging the gap between classroom theory and real-world software engineering through a high-velocity 36-hour build sprint.</p>
+  </div>
+
+  <div class="story-grid">
+    <div class="story-card">
+      <div class="story-icon">{{ icon('bolt') }}</div>
+      <h3 class="story-title">Our Mission &amp; Philosophy</h3>
+      <p class="story-text">{{ info.get('mission_p1', '') }}</p>
+      <div class="story-highlight">
+        <b>Core Ethos:</b> No toy projects, no slide-only concepts. Every team designs, engineers, and demonstrates a live functional prototype before an expert jury.
+      </div>
+    </div>
+
+    <div class="story-card">
+      <div class="story-icon">{{ icon('home') }}</div>
+      <h3 class="story-title">The Host Institution &amp; Chapter</h3>
+      <p class="story-text">{{ info.get('mission_p2', '') }}</p>
+      <div class="story-meta-tags">
+        <span class="story-meta-pill">🏛️ {{ info.get('institute_name', 'MITS Gwalior (Est. 1957)') }}</span>
+        <span class="story-meta-pill">💻 {{ info.get('chapter_name', 'ACM Student Chapter') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: CORE HACKATHON PILLARS (6 CARDS) -->
+  <div class="sec-head" style="margin-top:60px;">
+    <span class="sec-badge">{{ icon('trophy') }} Key Highlights</span>
+    <h2 class="sec-title">What Defines <em>CodeNite 2027</em></h2>
+    <p class="sec-sub">From overnight mentorship to transparent live judging — every element is designed to give you an unforgettable hacking journey.</p>
+  </div>
+
+  <div class="pillars-grid">
+    {% for p in pillars %}
+    <div class="pillar-card">
+      <div class="pillar-icon-box">
+        {{ icon(p.icon) }}
+      </div>
+      <h4 class="pillar-title">{{ p.title }}</h4>
+      <p class="pillar-desc">{{ p.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- SECTION 3: CAMPUS INFRASTRUCTURE & FACILITIES -->
+  <div class="sec-head" style="margin-top:60px;">
+    <span class="sec-badge">{{ icon('globe') }} Ground Setup</span>
+    <h2 class="sec-title">Campus <em>Facilities &amp; Hospitality</em></h2>
+    <p class="sec-sub">Everything you need to stay focused, comfortable, and energized throughout the 36 continuous build hours.</p>
+  </div>
+
+  <div class="facilities-grid">
+    {% for f in facilities %}
+    <div class="facility-card">
+      <div class="facility-header">
+        <div class="facility-icon-wrap">{{ icon(f.icon) }}</div>
+        <h4 class="facility-title">{{ f.title }}</h4>
+      </div>
+      <p class="facility-desc">{{ f.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- BOTTOM CALL TO ACTION -->
+  <div class="about-cta-box">
+    {% if not team %}
+    <h3 style="font-size:28px;font-weight:800;color:#0d0a1f;margin-bottom:8px;">Ready to Code the Future?</h3>
+    <p style="font-size:16px;color:#5a4f7c;max-width:580px;margin:0 auto 24px;">
+      Registrations are live for ACM CodeNite 2027. Bring your squad of 4 to 6 members and claim your desk at MITS Gwalior.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/team-registration" class="btn-cta-main">
+        Register Your Team (₹50) {{ icon('arrow') }}
+      </a>
+      <a href="/events" class="btn-cta-sub">
+        Explore 36-Hour Schedule {{ icon('arrow') }}
+      </a>
+    </div>
+    {% else %}
+    <h3 style="font-size:28px;font-weight:800;color:#0d0a1f;margin-bottom:8px;">Team {{ team.name }} is All Set!</h3>
+    <p style="font-size:16px;color:#5a4f7c;max-width:580px;margin:0 auto 24px;">
+      Check the hackathon schedule, submit your milestone deliverables, and consult with mentors on the floor.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/events" class="btn-cta-main">
+        {{ icon('upload') }} View Milestone Deliverables
+      </a>
+      <a href="/dashboard" class="btn-cta-sub">
+        {{ icon('users') }} Team Dashboard
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- STYLES SPECIFIC TO ABOUT PAGE -->
+<style>
+.about-hero{text-align:center;padding:28px 20px 36px;margin-bottom:24px;}
+.about-hero-badge{display:inline-flex;align-items:center;gap:10px;background:#e9ddff;border:1.5px solid var(--secondary);color:#2b1a66;border-radius:30px;padding:8px 22px;font-weight:700;font-size:15px;margin-bottom:14px;}
+.about-hero-title{font-size:clamp(34px,6vw,54px);font-weight:800;color:#0d0a1f;letter-spacing:-.03em;line-height:1.1;margin-bottom:12px;}
+.about-hero-title em{font-style:normal;color:var(--primary);}
+.about-hero-sub{font-size:clamp(16px,2vw,19px);color:#5b4e80;max-width:740px;margin:0 auto 24px;font-weight:500;}
+.about-stats-strip{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:18px;}
+.stat-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.85);border:1.5px solid #ded5fb;padding:8px 18px;border-radius:30px;font-size:14.5px;color:#1e1742;box-shadow:0 4px 15px rgba(109,40,217,.04);}
+.stat-pill b{color:#5b1ed6;}
+
+/* STORY GRID (2 COLUMNS) */
+.story-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:24px;}
+.story-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.25);border-radius:24px;padding:34px 30px;box-shadow:0 12px 35px rgba(109,40,217,.06);display:flex;flex-direction:column;}
+.story-icon{width:52px;height:52px;border-radius:16px;background:#ede7fd;color:var(--primary);display:grid;place-items:center;font-size:26px;margin-bottom:16px;}
+.story-title{font-size:22px;font-weight:800;color:#0d0a1f;margin-bottom:12px;}
+.story-text{font-size:15px;color:#4c416e;line-height:1.65;margin-bottom:18px;}
+.story-highlight{background:#faf7ff;border-left:4px solid var(--primary);border-radius:0 14px 14px 0;padding:14px 16px;font-size:13.5px;color:#3b2d66;line-height:1.5;margin-top:auto;}
+.story-meta-tags{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto;}
+.story-meta-pill{background:#faf7ff;border:1px solid #ebdfff;color:#5b1ed6;padding:6px 14px;border-radius:14px;font-size:13px;font-weight:700;}
+
+/* PILLARS GRID */
+.pillars-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;}
+.pillar-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:22px;padding:26px 24px;box-shadow:0 10px 30px rgba(109,40,217,.05);transition:all .2s;}
+.pillar-card:hover{border-color:var(--primary);transform:translateY(-2px);background:#fcfaff;}
+.pillar-icon-box{width:48px;height:48px;border-radius:16px;background:#ede7fd;color:var(--primary);display:grid;place-items:center;font-size:24px;margin-bottom:14px;}
+.pillar-title{font-size:18px;font-weight:800;color:#0d0a1f;margin-bottom:8px;}
+.pillar-desc{font-size:14px;color:#554a78;line-height:1.55;}
+
+/* FACILITIES GRID */
+.facilities-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;}
+.facility-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:22px;padding:24px 22px;box-shadow:0 8px 25px rgba(109,40,217,.04);transition:all .2s;}
+.facility-card:hover{border-color:var(--primary);background:#fcfaff;}
+.facility-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.facility-icon-wrap{width:42px;height:42px;border-radius:12px;background:#ede7fd;color:var(--primary);display:grid;place-items:center;font-size:20px;flex-shrink:0;}
+.facility-title{font-size:17px;font-weight:800;color:#0d0a1f;}
+.facility-desc{font-size:13.5px;color:#5a4f7c;line-height:1.5;}
+
+/* CTA BOX */
+.about-cta-box{margin:50px 0 20px;background:linear-gradient(135deg,#f8f4ff,#eee4ff);border:2px dashed #a855f7;border-radius:28px;padding:44px 28px;text-align:center;box-shadow:0 15px 40px rgba(109,40,217,.08);}
+.btn-cta-main{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(90deg,#5b1ed6,#8c45f7);color:#fff;border-radius:30px;padding:14px 32px;font-size:17px;font-weight:800;transition:all .2s;box-shadow:0 8px 24px rgba(109,40,217,.35);}
+.btn-cta-main:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-cta-sub{display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:30px;padding:12px 28px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-cta-sub:hover{background:#f5efff;}
+
+/* MOBILE MEDIA QUERY */
+@media (max-width:768px){
+  .about-hero{padding:16px 8px 24px;margin-bottom:18px;}
+  .about-hero-badge{font-size:13px;padding:6px 14px;margin-bottom:10px;}
+  .about-hero-title{font-size:clamp(26px,8vw,34px);line-height:1.15;margin-bottom:8px;}
+  .about-hero-sub{font-size:14.5px;margin-bottom:14px;}
+  .about-stats-strip{gap:8px;}
+  .stat-pill{padding:6px 12px;font-size:12.5px;width:100%;max-width:280px;justify-content:center;}
+  
+  .story-grid{grid-template-columns:1fr;gap:18px;}
+  .story-card{padding:22px 18px;border-radius:20px;}
+  .story-title{font-size:19px;}
+  
+  .pillars-grid{grid-template-columns:1fr;gap:16px;}
+  .pillar-card{padding:20px 16px;border-radius:18px;}
+  .pillar-title{font-size:17px;}
+  
+  .facilities-grid{grid-template-columns:1fr;gap:14px;}
+  .facility-card{padding:18px 16px;border-radius:18px;}
+  
+  .about-cta-box{padding:28px 16px;border-radius:20px;margin:32px 0 10px;}
+  .about-cta-box h3{font-size:22px;}
+  .about-cta-box p{font-size:14px;margin-bottom:18px;}
+  .btn-cta-main,.btn-cta-sub{width:100%;justify-content:center;font-size:14.5px;padding:12px 20px;}
+}
+</style>
+{% endblock %}

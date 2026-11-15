@@ -1,0 +1,244 @@
+{% extends 'base.html' %}{% block main %}
+<div class="reg-container" style="max-width:1480px;padding-top:24px;">
+
+  <!-- FAQ HERO BANNER -->
+  <div class="faq-hero">
+    <div class="faq-hero-badge">
+      {{ icon('help') }} ACM CodeNite 2027 · Help &amp; Support Hub
+    </div>
+    <h1 class="faq-hero-title">
+      Frequently Asked <em>Questions</em>
+    </h1>
+    <p class="faq-hero-sub">
+      Got questions about team formation, the ₹50 fee, code rules, meals, or judging? Everything you need to know is right here.
+    </p>
+
+    <!-- LIVE SEARCH BAR -->
+    <div class="faq-search-wrap">
+      <div class="faq-search-box">
+        <span class="search-icon">{{ icon('help') }}</span>
+        <input type="text" id="faq-search-input" placeholder="Search questions (e.g. team size, ₹50 fee, food, ppt, college)..." oninput="filterFaqs()">
+        <button type="button" class="btn-clear-search" id="clear-search-btn" onclick="clearSearch()" style="display:none;">✕</button>
+      </div>
+    </div>
+
+    <!-- CATEGORY PILLS -->
+    <div class="faq-cat-pills">
+      <button class="cat-pill active" onclick="filterCategory('all', this)">All Questions</button>
+      {% for cat in categories %}
+      <button class="cat-pill" onclick="filterCategory('{{ cat.slug }}', this)">{{ cat.title }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- FAQ ACCORDION LIST -->
+  <div class="faq-list-container" id="faq-list">
+    {% for item in all_faqs %}
+    <details class="faq-card" data-category="{{ item.category_slug }}">
+      <summary class="faq-question">
+        <span class="faq-q-text">{{ item.question }}</span>
+        <span class="faq-chevron">{{ icon('arrow') }}</span>
+      </summary>
+      <div class="faq-answer">
+        <p>{{ item.answer }}</p>
+      </div>
+    </details>
+    {% endfor %}
+
+    <!-- NO RESULTS MESSAGE -->
+    <div id="no-faq-msg" class="no-faq-card" style="display:none;">
+      <div style="font-size:36px;margin-bottom:8px;">🔍</div>
+      <h3 style="font-size:20px;font-weight:800;color:#0d0a1f;margin-bottom:6px;">No Matching Questions Found</h3>
+      <p style="font-size:14.5px;color:#6b5d92;margin-bottom:14px;">Try searching with different keywords like 'fee', 'team', 'food', or 'code', or reach out to our organizers below.</p>
+      <button type="button" class="cat-pill active" onclick="clearSearch()">View All Questions</button>
+    </div>
+  </div>
+
+  <!-- STILL HAVE QUESTIONS HELP CARD -->
+  <div class="help-desk-card">
+    <div class="help-left">
+      <div class="help-icon-wrap">{{ icon('mail') }}</div>
+      <div>
+        <h3 style="font-size:22px;font-weight:800;color:#0d0a1f;margin-bottom:4px;">Still have questions?</h3>
+        <p style="font-size:14.5px;color:#5a4f7c;margin:0;">Our student organizing committee is here to help you around the clock.</p>
+      </div>
+    </div>
+    <div class="help-right">
+      <a href="mailto:support@acm-mits.in" class="help-contact-btn">
+        {{ icon('mail') }} support@acm-mits.in
+      </a>
+      <span class="help-note">📍 On-ground Helpdesk active throughout Day 1–3</span>
+    </div>
+  </div>
+
+  <!-- BOTTOM CALL TO ACTION -->
+  <div class="faq-cta-box">
+    {% if not team %}
+    <h3 style="font-size:28px;font-weight:800;color:#0d0a1f;margin-bottom:8px;">Clear on the Rules? Assemble Your Squad!</h3>
+    <p style="font-size:16px;color:#5a4f7c;max-width:580px;margin:0 auto 24px;">
+      Registrations are live for ACM CodeNite 2027. Bring your squad of 4 to 6 members and claim your desk at MITS Gwalior.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/team-registration" class="btn-cta-main">
+        Register Your Team (₹50) {{ icon('arrow') }}
+      </a>
+      <a href="/events" class="btn-cta-sub">
+        Explore 36-Hour Schedule {{ icon('arrow') }}
+      </a>
+    </div>
+    {% else %}
+    <h3 style="font-size:28px;font-weight:800;color:#0d0a1f;margin-bottom:8px;">You're All Set, Team {{ team.name }}!</h3>
+    <p style="font-size:16px;color:#5a4f7c;max-width:580px;margin:0 auto 24px;">
+      Need to manage teammates or submit your milestone presentation?
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/events" class="btn-cta-main">
+        {{ icon('upload') }} View Submission Milestones
+      </a>
+      <a href="/dashboard" class="btn-cta-sub">
+        {{ icon('users') }} Team Dashboard
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- STYLES SPECIFIC TO FAQ PAGE -->
+<style>
+.faq-hero{text-align:center;padding:28px 20px 30px;margin-bottom:20px;}
+.faq-hero-badge{display:inline-flex;align-items:center;gap:10px;background:#e9ddff;border:1.5px solid var(--secondary);color:#2b1a66;border-radius:30px;padding:8px 22px;font-weight:700;font-size:15px;margin-bottom:14px;}
+.faq-hero-title{font-size:clamp(34px,6vw,54px);font-weight:800;color:#0d0a1f;letter-spacing:-.03em;line-height:1.1;margin-bottom:12px;}
+.faq-hero-title em{font-style:normal;color:var(--primary);}
+.faq-hero-sub{font-size:clamp(16px,2vw,19px);color:#5b4e80;max-width:720px;margin:0 auto 26px;font-weight:500;}
+
+/* SEARCH BAR */
+.faq-search-wrap{max-width:680px;margin:0 auto 22px;}
+.faq-search-box{display:flex;align-items:center;gap:12px;background:#ffffff;border:2px solid rgba(168,85,247,.35);border-radius:30px;padding:8px 20px;box-shadow:0 8px 25px rgba(109,40,217,.08);transition:all .2s;}
+.faq-search-box:focus-within{border-color:var(--primary);box-shadow:0 0 0 4px rgba(168,85,247,.18);}
+.search-icon{color:var(--primary);font-size:22px;display:grid;}
+.faq-search-box input{flex:1;border:0;outline:0;font-family:inherit;font-size:16px;color:#120d2d;background:transparent;}
+.faq-search-box input::placeholder{color:#9d93be;}
+.btn-clear-search{background:none;border:0;color:#8b7fae;font-size:16px;cursor:pointer;padding:4px;}
+
+/* CATEGORY PILLS */
+.faq-cat-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:14px;}
+.cat-pill{background:#ffffff;border:1.5px solid #ded5fb;color:#3f326a;padding:8px 18px;border-radius:24px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(109,40,217,.04);}
+.cat-pill:hover{background:#f6f1ff;color:var(--primary);border-color:var(--primary);}
+.cat-pill.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 4px 16px rgba(109,40,217,.25);}
+
+/* FAQ ACCORDION LIST */
+.faq-list-container{max-width:960px;margin:32px auto 0;display:grid;gap:14px;}
+.faq-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:20px;box-shadow:0 8px 24px rgba(109,40,217,.04);transition:all .2s;overflow:hidden;}
+.faq-card:hover{border-color:rgba(168,85,247,.55);}
+.faq-card[open]{border-color:var(--primary);box-shadow:0 12px 35px rgba(109,40,217,.1);}
+.faq-question{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 26px;cursor:pointer;font-size:17.5px;font-weight:800;color:#0d0a1f;list-style:none;}
+.faq-question::-webkit-details-marker{display:none;}
+.faq-chevron{width:32px;height:32px;border-radius:10px;background:#f2ebfd;color:var(--primary);display:grid;place-items:center;font-size:16px;transition:transform .3s;flex-shrink:0;}
+.faq-chevron .i{transform:rotate(90deg);transition:transform .3s;}
+.faq-card[open] .faq-chevron .i{transform:rotate(-90deg);}
+.faq-answer{padding:0 26px 22px;border-top:1px solid #f4efff;margin-top:4px;padding-top:14px;}
+.faq-answer p{font-size:15px;color:#493d6e;line-height:1.65;margin:0;}
+
+.no-faq-card{background:#ffffff;border:2px dashed #c4b5fd;border-radius:24px;padding:40px 24px;text-align:center;}
+
+/* HELP DESK CARD */
+.help-desk-card{max-width:960px;margin:44px auto 0;background:#ffffff;border:1.5px solid rgba(168,85,247,.3);border-radius:24px;padding:26px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;box-shadow:0 10px 30px rgba(109,40,217,.06);}
+.help-left{display:flex;align-items:center;gap:16px;}
+.help-icon-wrap{width:52px;height:52px;border-radius:16px;background:#ede7fd;color:var(--primary);display:grid;place-items:center;font-size:24px;flex-shrink:0;}
+.help-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.help-contact-btn{display:inline-flex;align-items:center;gap:8px;background:#150f38;color:#fff;border:1.5px solid var(--accent);border-radius:20px;padding:10px 20px;font-weight:700;font-size:14px;transition:all .2s;}
+.help-contact-btn:hover{background:#2a1a5e;}
+.help-note{font-size:12.5px;color:#6b5d92;}
+
+/* CTA BOX */
+.faq-cta-box{margin:50px 0 20px;background:linear-gradient(135deg,#f8f4ff,#eee4ff);border:2px dashed #a855f7;border-radius:28px;padding:44px 28px;text-align:center;box-shadow:0 15px 40px rgba(109,40,217,.08);}
+.btn-cta-main{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(90deg,#5b1ed6,#8c45f7);color:#fff;border-radius:30px;padding:14px 32px;font-size:17px;font-weight:800;transition:all .2s;box-shadow:0 8px 24px rgba(109,40,217,.35);}
+.btn-cta-main:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-cta-sub{display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:30px;padding:12px 28px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-cta-sub:hover{background:#f5efff;}
+
+/* MOBILE MEDIA QUERY */
+@media (max-width:768px){
+  .faq-hero{padding:16px 8px 20px;margin-bottom:14px;}
+  .faq-hero-badge{font-size:13px;padding:6px 14px;margin-bottom:10px;}
+  .faq-hero-title{font-size:clamp(26px,8vw,34px);line-height:1.15;margin-bottom:8px;}
+  .faq-hero-sub{font-size:14.5px;margin-bottom:18px;}
+  
+  .faq-search-box{padding:6px 16px;}
+  .faq-search-box input{font-size:14.5px;}
+  
+  .faq-cat-pills{justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:6px;}
+  .cat-pill{font-size:13px;padding:7px 14px;flex-shrink:0;}
+  
+  .faq-question{padding:18px 16px;font-size:16px;}
+  .faq-answer{padding:0 16px 18px;}
+  .faq-answer p{font-size:14px;}
+  
+  .help-desk-card{padding:20px 16px;flex-direction:column;align-items:stretch;}
+  .help-right{align-items:stretch;margin-top:6px;}
+  .help-contact-btn{justify-content:center;}
+  .help-note{text-align:center;}
+  
+  .faq-cta-box{padding:28px 16px;border-radius:20px;margin:32px 0 10px;}
+  .faq-cta-box h3{font-size:22px;}
+  .faq-cta-box p{font-size:14px;margin-bottom:18px;}
+  .btn-cta-main,.btn-cta-sub{width:100%;justify-content:center;font-size:14.5px;padding:12px 20px;}
+}
+</style>
+
+<script>
+let currentCat = 'all';
+
+function filterCategory(catSlug, btn) {
+  currentCat = catSlug;
+  document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  applyFilters();
+}
+
+function filterFaqs() {
+  const query = document.getElementById('faq-search-input').value.trim();
+  const clearBtn = document.getElementById('clear-search-btn');
+  if (clearBtn) clearBtn.style.display = query ? 'inline-block' : 'none';
+  applyFilters();
+}
+
+function clearSearch() {
+  const input = document.getElementById('faq-search-input');
+  if (input) input.value = '';
+  const clearBtn = document.getElementById('clear-search-btn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  currentCat = 'all';
+  document.querySelectorAll('.cat-pill').forEach((b, idx) => {
+    b.classList.toggle('active', idx === 0);
+  });
+  applyFilters();
+}
+
+function applyFilters() {
+  const query = document.getElementById('faq-search-input').value.toLowerCase().trim();
+  const cards = document.querySelectorAll('.faq-card');
+  let visibleCount = 0;
+
+  cards.forEach(card => {
+    const cardCat = card.getAttribute('data-category');
+    const text = card.textContent.toLowerCase();
+    const matchesCat = (currentCat === 'all' || cardCat === currentCat);
+    const matchesQuery = (!query || text.includes(query));
+
+    if (matchesCat && matchesQuery) {
+      card.style.display = 'block';
+      visibleCount++;
+    } else {
+      card.style.display = 'none';
+    }
+  });
+
+  const noMsg = document.getElementById('no-faq-msg');
+  if (noMsg) {
+    noMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+  }
+}
+</script>
+{% endblock %}

@@ -66,6 +66,9 @@ h1 i{font-weight:800}
 .or{display:flex;align-items:center;gap:0.875rem;margin:1.0625rem 0 0.9375rem;font-size:0.8125rem;color:#e0dcf5}
 .or:before,.or:after{content:"";flex:1;height:0.0625rem;background:rgba(196,181,253,.4)}
 .btn-g{display:flex;align-items:center;justify-content:center;gap:0.75rem;height:3.25rem;border-radius:1.875rem;background:#fff;color:#1c1b2e;font-weight:600;font-size:1.0625rem}
+.btn-reg-team{display:flex;align-items:center;justify-content:center;gap:0.75rem;height:3.25rem;border-radius:1.875rem;background:rgba(255,255,255,.08);color:#fff;border:0.125rem solid var(--accent);font-weight:700;font-size:1.0625rem;text-decoration:none;transition:all .2s;box-shadow:0 0.25rem 1rem rgba(0,0,0,.2)}
+.btn-reg-team:hover{background:rgba(168,85,247,.22);border-color:#c084fc;transform:translateY(-0.0625rem);color:#fff}
+.btn-reg-team .i{color:var(--secondary);font-size:1.25rem}
 .foot{text-align:center;font-size:0.9062rem;margin-top:1.5rem}.foot a{color:#a78bfa;text-decoration:underline}
 .solo{padding:1.875rem 0 3.75rem;position:relative;z-index:2}
 /* inner pages */

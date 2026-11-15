@@ -9,7 +9,7 @@ SITE = {
  "features": ["users", "bulb", "trophy", "doc"],
  "card": {"title":"Welcome","title_accent":"Back!","sub":"Enter your Team ID and Password to access your dashboard",
           "email":"Team ID","password":"Team Password",
-          "login":"Team Login","or":"OR","google":"Continue with Google",
+          "login":"Team Login","or":"OR",
           "no_account":"New Team?","register":"Register Your Team"},
  "events": [("Opening ceremony","Day 1 · 9:00 AM","Problem statements are revealed and teams get settled in."),
             ("36-hour build","Day 1–2","Mentors are on the floor round the clock."),

@@ -1,0 +1,267 @@
+{% extends 'base.html' %}{% block main %}
+<div class="reg-container" style="max-width:1480px;padding-top:24px;">
+
+  <!-- PRIZES HERO BANNER -->
+  <div class="prize-hero">
+    <div class="prize-hero-badge">
+      {{ icon('trophy') }} ACM CodeNite 2027 · Rewards &amp; Opportunities
+    </div>
+    <h1 class="prize-hero-title">
+      Compete for Glory, <em>Cash &amp; Opportunities</em>
+    </h1>
+    <p class="prize-hero-sub">
+      {{ overview.get('sub', "ACM CodeNite 2027 features a massive prize pool designed to reward technical depth, creative innovation, and tangible execution.") }}
+    </p>
+
+    <div class="prize-stats-strip">
+      <div class="stat-pill">{{ icon('trophy') }} Total Prize Pool: <b>{{ overview.get('total_pool', '₹2,50,000+') }}</b></div>
+      <div class="stat-pill">{{ icon('bolt') }} Direct Cash Awards: <b>{{ overview.get('cash_pool', '₹2,00,000') }}</b></div>
+      <div class="stat-pill">{{ icon('globe') }} Cloud Credits &amp; Tools: <b>{{ overview.get('perks_val', '₹50,000+') }}</b></div>
+      <div class="stat-pill">{{ icon('users') }} <b>Paid Internship Interviews</b></div>
+      <div class="stat-pill">{{ icon('check') }} <b>Swag Boxes &amp; Verified Certificates</b></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: PODIUM PRIZES (TOP 3) -->
+  <div class="sec-head" style="margin-top:36px;">
+    <span class="sec-badge">{{ icon('trophy') }} Grand Winners</span>
+    <h2 class="sec-title">The Flagship <em>Podium</em></h2>
+    <p class="sec-sub">The top 3 engineering teams of ACM CodeNite 2027 walk away with massive cash awards, trophies, and direct corporate recruitment access.</p>
+  </div>
+
+  <div class="podium-grid">
+    {% for p in podium %}
+    <div class="podium-card rank-{{ p.rank }}" style="border-top: 5px solid {{ p.color_accent }};">
+      <div class="podium-badge-wrap">
+        <span class="podium-rank-badge" style="background:{{ p.color_accent }};color:#fff;">
+          {{ p.badge }}
+        </span>
+      </div>
+
+      <div class="podium-cash-box">
+        <span class="cash-label">CASH PRIZE</span>
+        <h3 class="cash-amount" style="color:{{ p.color_accent }};">{{ p.amount }}</h3>
+      </div>
+
+      <h4 class="podium-title">{{ p.title }}</h4>
+      <p class="podium-trophy">{{ icon('trophy') }} <b>Trophy:</b> {{ p.trophy }}</p>
+
+      <div class="podium-perks-list">
+        <div class="perks-head">Winner Perks &amp; Recognition:</div>
+        <ul>
+          {% for perk in p.perks_list %}
+          <li>{{ icon('check') }} <span>{{ perk }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- SECTION 2: TRACK & SPECIAL CATEGORY AWARDS -->
+  <div class="sec-head" style="margin-top:60px;">
+    <span class="sec-badge">{{ icon('bolt') }} Category Bounties</span>
+    <h2 class="sec-title">Track &amp; Special <em>Awards</em></h2>
+    <p class="sec-sub">Specialized awards celebrating domain mastery, freshman grit, and social impact. Stackable with podium prizes!</p>
+  </div>
+
+  <div class="category-prizes-grid">
+    {% for cat in categories %}
+    <div class="category-prize-card" style="border-left: 4px solid {{ cat.color_accent or '#8b5cf6' }};">
+      <div class="cat-card-header">
+        <div class="cat-icon-box" style="color:{{ cat.color_accent or '#8b5cf6' }};background:rgba(168,85,247,.12);">
+          {{ icon(cat.icon) }}
+        </div>
+        <div style="flex:1;">
+          <span class="cat-tag" style="color:{{ cat.color_accent or '#8b5cf6' }};">{{ cat.tag }}</span>
+          <h3 class="cat-title">{{ cat.title }}</h3>
+        </div>
+        <div class="cat-amount-pill">
+          {{ cat.amount }}
+        </div>
+      </div>
+      <p class="cat-desc">{{ cat.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- SECTION 3: PERKS FOR ALL ATTENDEES -->
+  <div class="sec-head" style="margin-top:60px;">
+    <span class="sec-badge">{{ icon('sparkles') }} Participation Bounty</span>
+    <h2 class="sec-title">Perks for <em>Every Participant</em></h2>
+    <p class="sec-sub">At ACM CodeNite, every builder who stays the course and presents their project receives tangible perks, certificates, and recognition.</p>
+  </div>
+
+  <div class="perks-all-grid">
+    {% for perk in perks %}
+    <div class="perk-item-card">
+      <div class="perk-icon-circle">
+        {{ icon(perk.icon) }}
+      </div>
+      <h4 class="perk-title">{{ perk.title }}</h4>
+      <p class="perk-desc">{{ perk.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- SECTION 4: PRIZE RULES & DISBURSEMENT TERMS -->
+  <div class="sec-head" style="margin-top:60px;">
+    <span class="sec-badge">{{ icon('doc') }} Guidelines</span>
+    <h2 class="sec-title">Disbursement &amp; <em>Terms</em></h2>
+    <p class="sec-sub">Transparent rules governing award evaluation, verification, and direct prize transfers.</p>
+  </div>
+
+  <div class="prize-terms-card">
+    <div class="terms-card-head">
+      {{ icon('info') }} Official Prize Disbursement Terms
+    </div>
+    <ul class="prize-terms-list">
+      {% for rule in rules %}
+      <li>
+        <span class="rule-bullet">✓</span>
+        <p>{{ rule.rule_text }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- BOTTOM CALL TO ACTION -->
+  <div class="prize-cta-box">
+    {% if not team %}
+    <h3 style="font-size:28px;font-weight:800;color:#0d0a1f;margin-bottom:8px;">Ready to Claim Your Share of the Pool?</h3>
+    <p style="font-size:16px;color:#5a4f7c;max-width:580px;margin:0 auto 24px;">
+      Registrations are live for ACM CodeNite 2027! Gather your squad of 4 to 6 members, register your team, and compete against top tech innovators.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/team-registration" class="btn-cta-main">
+        Register Your Team (₹50) {{ icon('arrow') }}
+      </a>
+      <a href="/events" class="btn-cta-sub">
+        View Hackathon Schedule &amp; Tracks {{ icon('arrow') }}
+      </a>
+    </div>
+    {% else %}
+    <h3 style="font-size:28px;font-weight:800;color:#0d0a1f;margin-bottom:8px;">Aim for the Top, Team {{ team.name }}!</h3>
+    <p style="font-size:16px;color:#5a4f7c;max-width:580px;margin:0 auto 24px;">
+      You are registered in the <b>{{ team.domain }}</b> track. Focus on execution, technical depth, and milestone submissions to make the podium.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/events" class="btn-cta-main">
+        {{ icon('upload') }} Go to Milestone Submissions
+      </a>
+      <a href="/dashboard" class="btn-cta-sub">
+        {{ icon('users') }} Team Dashboard
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- STYLES SPECIFIC TO PRIZES PAGE -->
+<style>
+.prize-hero{text-align:center;padding:28px 20px 36px;margin-bottom:24px;}
+.prize-hero-badge{display:inline-flex;align-items:center;gap:10px;background:#e9ddff;border:1.5px solid var(--secondary);color:#2b1a66;border-radius:30px;padding:8px 22px;font-weight:700;font-size:15px;margin-bottom:14px;}
+.prize-hero-title{font-size:clamp(34px,6vw,54px);font-weight:800;color:#0d0a1f;letter-spacing:-.03em;line-height:1.1;margin-bottom:12px;}
+.prize-hero-title em{font-style:normal;color:var(--primary);}
+.prize-hero-sub{font-size:clamp(16px,2vw,19px);color:#5b4e80;max-width:720px;margin:0 auto 24px;font-weight:500;}
+.prize-stats-strip{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:18px;}
+.stat-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.85);border:1.5px solid #ded5fb;padding:8px 18px;border-radius:30px;font-size:14.5px;color:#1e1742;box-shadow:0 4px 15px rgba(109,40,217,.04);}
+.stat-pill b{color:#5b1ed6;}
+
+/* PODIUM GRID */
+.podium-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:24px;align-items:stretch;}
+.podium-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:26px;padding:32px 28px;box-shadow:0 14px 40px rgba(109,40,217,.07);display:flex;flex-direction:column;position:relative;transition:all .3s;}
+.podium-card:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(109,40,217,.12);}
+.podium-card.rank-1{background:linear-gradient(180deg,#fffdf7,#ffffff);box-shadow:0 18px 45px rgba(234,179,8,.15);}
+.podium-badge-wrap{margin-bottom:16px;}
+.podium-rank-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-weight:800;font-size:14px;letter-spacing:.4px;}
+.podium-cash-box{background:#faf7ff;border:1.5px solid #ebdfff;border-radius:18px;padding:16px 20px;text-align:center;margin-bottom:20px;}
+.cash-label{display:block;font-size:12px;font-weight:800;color:#6b5d92;letter-spacing:1px;margin-bottom:4px;}
+.cash-amount{font-size:clamp(36px,5vw,46px);font-weight:900;line-height:1;letter-spacing:-.02em;}
+.podium-title{font-size:20px;font-weight:800;color:#0d0a1f;margin-bottom:8px;}
+.podium-trophy{font-size:14px;color:#4c416e;display:flex;align-items:center;gap:8px;margin-bottom:22px;}
+.podium-trophy .i{color:var(--primary);font-size:18px;}
+.podium-perks-list{margin-top:auto;border-top:1.5px solid #f0eaff;padding-top:18px;}
+.perks-head{font-size:13px;font-weight:800;color:#6b5d92;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
+.podium-perks-list ul{list-style:none;display:grid;gap:10px;padding-left:0;}
+.podium-perks-list li{font-size:13.5px;color:#35295c;display:flex;align-items:flex-start;gap:10px;line-height:1.45;}
+.podium-perks-list li .i{color:#16a34a;font-size:16px;flex-shrink:0;margin-top:2px;}
+
+/* CATEGORY PRIZES GRID */
+.category-prizes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:22px;}
+.category-prize-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.2);border-radius:22px;padding:24px 26px;box-shadow:0 10px 30px rgba(109,40,217,.05);transition:all .2s;}
+.category-prize-card:hover{border-color:rgba(168,85,247,.5);transform:translateY(-2px);}
+.cat-card-header{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+.cat-icon-box{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:24px;flex-shrink:0;}
+.cat-tag{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:2px;}
+.cat-title{font-size:17.5px;font-weight:800;color:#0d0a1f;}
+.cat-amount-pill{background:#ede7fd;border:1.5px solid #c4b5fd;color:#5b1ed6;font-size:17px;font-weight:800;padding:6px 14px;border-radius:16px;white-space:nowrap;}
+.cat-desc{font-size:14px;color:#514574;line-height:1.55;}
+
+/* PERKS ALL GRID */
+.perks-all-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;}
+.perk-item-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:22px;padding:24px 22px;box-shadow:0 8px 24px rgba(109,40,217,.04);transition:all .2s;}
+.perk-item-card:hover{background:#faf7ff;border-color:var(--primary);}
+.perk-icon-circle{width:46px;height:46px;border-radius:14px;background:#ede7fd;color:var(--primary);display:grid;place-items:center;font-size:22px;margin-bottom:14px;}
+.perk-title{font-size:17px;font-weight:800;color:#0d0a1f;margin-bottom:6px;}
+.perk-desc{font-size:13.5px;color:#5c507e;line-height:1.5;}
+
+/* PRIZE TERMS CARD */
+.prize-terms-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.25);border-radius:24px;padding:30px 34px;box-shadow:0 10px 30px rgba(109,40,217,.05);}
+.terms-card-head{font-size:18px;font-weight:800;color:#0d0a1f;display:flex;align-items:center;gap:10px;margin-bottom:18px;border-bottom:1.5px solid #f0eaff;padding-bottom:12px;}
+.terms-card-head .i{color:var(--primary);font-size:22px;}
+.prize-terms-list{list-style:none;display:grid;gap:14px;padding-left:0;}
+.prize-terms-list li{display:flex;align-items:flex-start;gap:12px;font-size:14.5px;color:#453a6d;line-height:1.6;}
+.rule-bullet{color:var(--primary);font-weight:900;font-size:16px;}
+
+/* CTA BOX */
+.prize-cta-box{margin:50px 0 20px;background:linear-gradient(135deg,#f8f4ff,#eee4ff);border:2px dashed #a855f7;border-radius:28px;padding:44px 28px;text-align:center;box-shadow:0 15px 40px rgba(109,40,217,.08);}
+.btn-cta-main{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(90deg,#5b1ed6,#8c45f7);color:#fff;border-radius:30px;padding:14px 32px;font-size:17px;font-weight:800;transition:all .2s;box-shadow:0 8px 24px rgba(109,40,217,.35);}
+.btn-cta-main:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-cta-sub{display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:30px;padding:12px 28px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-cta-sub:hover{background:#f5efff;}
+
+/* ==================================== */
+/* DEDICATED PHONE / MOBILE MEDIA QUERY */
+/* ==================================== */
+@media (max-width:768px){
+  .prize-hero{padding:16px 8px 24px;margin-bottom:18px;}
+  .prize-hero-badge{font-size:13px;padding:6px 14px;margin-bottom:10px;}
+  .prize-hero-title{font-size:clamp(26px,8vw,34px);line-height:1.15;margin-bottom:8px;}
+  .prize-hero-sub{font-size:14.5px;margin-bottom:14px;}
+  .prize-stats-strip{gap:8px;}
+  .stat-pill{padding:6px 12px;font-size:12.5px;width:100%;max-width:280px;justify-content:center;}
+  
+  /* Podium on Mobile */
+  .podium-grid{grid-template-columns:1fr;gap:18px;}
+  .podium-card{padding:22px 18px;border-radius:20px;}
+  .cash-amount{font-size:36px;}
+  .podium-title{font-size:18px;}
+  
+  /* Category Prizes on Mobile */
+  .category-prizes-grid{grid-template-columns:1fr;gap:16px;}
+  .category-prize-card{padding:18px 16px;border-radius:18px;}
+  .cat-card-header{flex-wrap:wrap;gap:10px;}
+  .cat-amount-pill{font-size:15px;padding:4px 10px;}
+  .cat-title{font-size:16.5px;}
+  
+  /* Perks on Mobile */
+  .perks-all-grid{grid-template-columns:1fr;gap:14px;}
+  .perk-item-card{padding:18px 16px;border-radius:18px;}
+  .perk-title{font-size:16px;}
+  .perk-desc{font-size:13px;}
+  
+  /* Terms Card on Mobile */
+  .prize-terms-card{padding:20px 16px;border-radius:20px;}
+  .terms-card-head{font-size:16.5px;}
+  .prize-terms-list li{font-size:13.5px;}
+  
+  /* CTA Box on Mobile */
+  .prize-cta-box{padding:28px 16px;border-radius:20px;margin:32px 0 10px;}
+  .prize-cta-box h3{font-size:22px;}
+  .prize-cta-box p{font-size:14px;margin-bottom:18px;}
+  .btn-cta-main,.btn-cta-sub{width:100%;justify-content:center;font-size:14.5px;padding:12px 20px;}
+}
+</style>
+{% endblock %}
