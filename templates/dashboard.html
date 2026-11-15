@@ -1,6 +1,471 @@
 {% extends 'base.html' %}{% block main %}
-<main class="wrap"><h1 class="pt">Hi, {{ me.name.split()[0] }}</h1>
-{% if team %}<div class="panel"><p class="ok">Team registered</p><h2>{{ team.name }}</h2><p>{{ team.college }}</p>
- <ul>{% for m in members %}<li>{{ m.name }} <span>{{ m.email }}</span></li>{% endfor %}</ul>
- <a class="btn-reg dark" href="/team-registration">Edit team</a></div>
-{% else %}<div class="panel"><p>You haven’t registered a team yet.</p><a class="btn-reg dark" href="/team-registration">Register your team {{ icon('arrow') }}</a></div>{% endif %}</main>{% endblock %}
+<div class="reg-container" style="max-width:1040px;">
+
+  {% if team %}
+  <!-- 1. TEAM HEADER CARD -->
+  <div class="reg-card" style="box-shadow:0 14px 40px rgba(109,40,217,.1);padding:32px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+      <div>
+        <span class="reg-badge" style="margin-bottom:8px;">{{ icon('trophy') }} {{ team.domain or 'General' }}</span>
+        <h1 style="font-size:clamp(30px,5vw,42px);font-weight:800;color:#0f0b24;margin:4px 0 6px;">{{ team.name }}</h1>
+        <p style="font-size:14px;color:#6b5d92;">Registered on {{ team.created_at[:10] if team.created_at else 'CodeNite 2027' }}</p>
+      </div>
+
+      <!-- EDIT TEAM BUTTON -->
+      <div>
+        <button type="button" class="btn-action-edit" onclick="openModal('edit-team-modal')">
+          ✏️ Edit Team Info
+        </button>
+      </div>
+    </div>
+
+    <!-- CREDENTIALS & PAYMENT STATUS BAR -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:24px;padding-top:22px;border-top:1.5px solid #f0eaff;">
+      
+      <!-- TEAM ID (LOCKED) -->
+      <div class="dash-stat-box">
+        <div class="dash-stat-label">TEAM ID <span class="tag-lock">🔒 Locked</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+          <b style="font-size:22px;color:#0f0b24;" id="dash-tid">{{ team.team_id }}</b>
+          <button type="button" class="btn-copy-sm" onclick="copyDashText('dash-tid', this)">📋 Copy</button>
+        </div>
+      </div>
+
+      <!-- TEAM PASSWORD (LOCKED) -->
+      <div class="dash-stat-box">
+        <div class="dash-stat-label">TEAM PASSWORD <span class="tag-lock">🔒 Locked</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">
+          <b style="font-size:19px;color:#7c3aed;font-family:monospace;" id="dash-tpw">{{ team.team_pw }}</b>
+          <button type="button" class="btn-copy-sm" onclick="copyDashText('dash-tpw', this)">📋 Copy</button>
+        </div>
+      </div>
+
+      <!-- PAYMENT STATUS (LOCKED) -->
+      <div class="dash-stat-box">
+        <div class="dash-stat-label">PAYMENT (₹50) <span class="tag-lock">🔒 Locked</span></div>
+        <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+          {% if team.payment_status == 'Verified' %}
+          <span class="pay-tag-verified">✓ Verified</span>
+          {% else %}
+          <span class="pay-tag-pending">⏳ {{ team.payment_status }}</span>
+          {% endif %}
+          {% if team.payment_screenshot %}
+          <a href="{{ url_for('static', filename=team.payment_screenshot) }}" target="_blank" class="btn-receipt">Receipt ↗</a>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 2. TEAM MEMBERS ROSTER -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin:32px 0 16px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h2 style="font-size:24px;font-weight:800;color:#0f0b24;">
+        👥 Team Members ({{ members|length }}/6)
+      </h2>
+      <p style="font-size:14px;color:#6b5d92;margin-top:2px;">Minimum 4 members compulsory · Maximum 6 members</p>
+    </div>
+
+    <!-- ADD MEMBER BUTTON (IF < 6) -->
+    {% if members|length < 6 %}
+    <button type="button" class="btn-add-dash" onclick="openModal('add-member-modal')">
+      + Add Member ({{ 6 - members|length }} slot{{ 's' if (6 - members|length) > 1 else '' }} open)
+    </button>
+    {% else %}
+    <span class="member-tag tag-comp" style="font-size:13px;padding:6px 14px;">Squad Full (6/6)</span>
+    {% endif %}
+  </div>
+
+  <!-- MEMBERS GRID -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:20px;">
+    {% for m in members %}
+    <div class="reg-card member-dash-card" style="margin-bottom:0;display:flex;flex-direction:column;justify-content:space-between;">
+      <div>
+        <!-- MEMBER HEADER -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;border-bottom:1.5px solid #f0eaff;padding-bottom:12px;">
+          <div>
+            <span class="member-tag {{ 'tag-leader' if m.is_leader else 'tag-comp' }}">
+              {{ '👑 Team Leader' if m.is_leader else 'Member ' ~ loop.index }}
+            </span>
+            <h3 style="font-size:19px;font-weight:800;color:#0f0b24;margin-top:8px;">{{ m.fname }} {{ m.lname }}</h3>
+          </div>
+          
+          <!-- ACTIONS: EDIT & DELETE -->
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn-m-action btn-m-edit" title="Edit Member Details" onclick="openEditMemberModal({{ m.id }}, '{{ m.fname|escape }}', '{{ m.lname|escape }}', '{{ m.email|escape }}', '{{ m.phone|escape }}', '{{ m.gender|escape }}', '{{ m.college|escape }}', '{{ m.course|escape }}', '{{ m.branch|escape }}', '{{ m.duration|escape }}', '{{ m.year|escape }}', '{{ m.grad_year|escape }}', '{{ m.enrollment|escape }}', {{ 'true' if m.is_leader else 'false' }})">
+              ✏️
+            </button>
+
+            <!-- DELETE BUTTON: ONLY IF > 4 MEMBERS AND NOT LEADER -->
+            {% if not m.is_leader %}
+              {% if members|length > 4 %}
+              <form method="post" action="/member/delete/{{ m.id }}" onsubmit="return confirm('Remove {{ m.fname }} from the team?');" style="margin:0;">
+                <input type="hidden" name="csrf" value="{{ csrf() }}">
+                <button type="submit" class="btn-m-action btn-m-del" title="Delete Member">🗑️</button>
+              </form>
+              {% else %}
+              <button type="button" class="btn-m-action btn-m-del disabled" title="Teams must have at least 4 members. Cannot delete." disabled>🗑️</button>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- DETAILS LIST -->
+        <div class="dash-member-details">
+          <div><span>Email:</span> <b>{{ m.email }}</b> {% if m.is_leader %}<small title="Leader email cannot be changed" style="color:#a855f7;">🔒</small>{% endif %}</div>
+          <div><span>Phone:</span> <b>{{ m.phone or '—' }}</b></div>
+          <div><span>College:</span> <b>{{ m.college or '—' }}</b></div>
+          <div><span>Course &amp; Branch:</span> <b>{{ m.course }} · {{ m.branch }}</b></div>
+          <div><span>Year:</span> <b>{{ m.year }} (Graduating {{ m.grad_year }})</b></div>
+          <div><span>Enrollment No:</span> <b>{{ m.enrollment or '—' }}</b></div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <!-- NO TEAM REGISTERED YET -->
+  <div class="reg-card" style="text-align:center;padding:50px 20px;">
+    <div style="font-size:48px;margin-bottom:12px;">⚡</div>
+    <h2 style="font-size:28px;font-weight:800;color:#0f0b24;margin-bottom:8px;">You Haven't Registered a Team Yet</h2>
+    <p style="color:#6b5d92;max-width:440px;margin:0 auto 24px;font-size:16px;">
+      Register your squad of 4 to 6 members for ACM CodeNite 2027 and lock your spot!
+    </p>
+    <a href="/team-registration" class="btn-submit-reg" style="display:inline-flex;max-width:300px;text-decoration:none;">
+      Register Your Team {{ icon('arrow') }}
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- 1. EDIT TEAM MODAL -->
+{% if team %}
+<div class="dash-modal" id="edit-team-modal">
+  <div class="dash-modal-backdrop" onclick="closeModal('edit-team-modal')"></div>
+  <div class="dash-modal-card">
+    <div class="dash-modal-head">
+      <h3>✏️ Edit Team Information</h3>
+      <button type="button" class="btn-close-modal" onclick="closeModal('edit-team-modal')">✕</button>
+    </div>
+    <form method="post" action="/team/edit">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      <div class="fg" style="margin-bottom:16px;">
+        <label>Team Name <span class="req">*</span></label>
+        <input type="text" name="team_name" value="{{ team.name }}" required>
+      </div>
+      <div class="fg" style="margin-bottom:20px;">
+        <label>Project Track / Domain <span class="req">*</span></label>
+        <select name="domain" required>
+          <option value="AI / Machine Learning" {{ 'selected' if team.domain == 'AI / Machine Learning' }}>AI / Machine Learning</option>
+          <option value="Web & Mobile App Development" {{ 'selected' if team.domain == 'Web & Mobile App Development' }}>Web &amp; Mobile App Development</option>
+          <option value="Cloud, DevOps & Cyber Security" {{ 'selected' if team.domain == 'Cloud, DevOps & Cyber Security' }}>Cloud, DevOps &amp; Cyber Security</option>
+          <option value="Web3 & Blockchain" {{ 'selected' if team.domain == 'Web3 & Blockchain' }}>Web3 &amp; Blockchain</option>
+          <option value="Open Innovation" {{ 'selected' if team.domain == 'Open Innovation' }}>Open Innovation</option>
+        </select>
+      </div>
+      <p style="font-size:13px;color:#6b5d92;margin-bottom:16px;">
+        Note: Team ID, auto-generated Team Password, and Payment Screenshot are permanently locked and cannot be changed.
+      </p>
+      <div style="display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" class="btn-cancel" onclick="closeModal('edit-team-modal')">Cancel</button>
+        <button type="submit" class="btn-save">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 2. EDIT MEMBER MODAL -->
+<div class="dash-modal" id="edit-member-modal">
+  <div class="dash-modal-backdrop" onclick="closeModal('edit-member-modal')"></div>
+  <div class="dash-modal-card" style="max-width:680px;">
+    <div class="dash-modal-head">
+      <h3 id="edit-member-title">✏️ Edit Member Details</h3>
+      <button type="button" class="btn-close-modal" onclick="closeModal('edit-member-modal')">✕</button>
+    </div>
+    <form method="post" id="edit-member-form">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      
+      <div class="form-grid col-2">
+        <div class="fg">
+          <label>First Name <span class="req">*</span></label>
+          <input type="text" name="fname" id="em-fname" required>
+        </div>
+        <div class="fg">
+          <label>Last Name <span class="req">*</span></label>
+          <input type="text" name="lname" id="em-lname" required>
+        </div>
+      </div>
+
+      <div class="form-grid col-3" style="margin-top:14px;">
+        <div class="fg">
+          <label>Email ID <span id="em-email-lock" style="font-size:11px;color:#a855f7;"></span></label>
+          <input type="email" name="email" id="em-email" required>
+        </div>
+        <div class="fg">
+          <label>Phone / WhatsApp <span class="req">*</span></label>
+          <input type="tel" name="phone" id="em-phone" pattern="[0-9]{10}" required>
+        </div>
+        <div class="fg">
+          <label>Gender <span class="req">*</span></label>
+          <select name="gender" id="em-gender" required>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-top:14px;">
+        <div class="fg">
+          <label>College / Institute <span class="req">*</span></label>
+          <input type="text" name="college" id="em-college" required>
+        </div>
+      </div>
+
+      <div class="form-grid col-3" style="margin-top:14px;">
+        <div class="fg">
+          <label>Course <span class="req">*</span></label>
+          <input type="text" name="course" id="em-course" required>
+        </div>
+        <div class="fg">
+          <label>Branch <span class="req">*</span></label>
+          <input type="text" name="branch" id="em-branch" required>
+        </div>
+        <div class="fg">
+          <label>Duration <span class="req">*</span></label>
+          <select name="duration" id="em-duration">
+            <option value="4 Years">4 Years</option>
+            <option value="3 Years">3 Years</option>
+            <option value="2 Years">2 Years</option>
+            <option value="5 Years">5 Years</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid col-3" style="margin-top:14px;">
+        <div class="fg">
+          <label>Current Year <span class="req">*</span></label>
+          <select name="year" id="em-year" required>
+            <option value="1st Year">1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Graduating Year <span class="req">*</span></label>
+          <select name="grad_year" id="em-grad-year" required>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+            <option value="2029">2029</option>
+            <option value="2030">2030</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Enrollment No. <span class="req">*</span></label>
+          <input type="text" name="enrollment" id="em-enrollment" required>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
+        <button type="button" class="btn-cancel" onclick="closeModal('edit-member-modal')">Cancel</button>
+        <button type="submit" class="btn-save">Save Member Details</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 3. ADD MEMBER MODAL -->
+<div class="dash-modal" id="add-member-modal">
+  <div class="dash-modal-backdrop" onclick="closeModal('add-member-modal')"></div>
+  <div class="dash-modal-card" style="max-width:680px;">
+    <div class="dash-modal-head">
+      <h3>+ Add New Teammate</h3>
+      <button type="button" class="btn-close-modal" onclick="closeModal('add-member-modal')">✕</button>
+    </div>
+    <form method="post" action="/member/add">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      
+      <div class="form-grid col-2">
+        <div class="fg">
+          <label>First Name <span class="req">*</span></label>
+          <input type="text" name="fname" placeholder="First Name" required>
+        </div>
+        <div class="fg">
+          <label>Last Name <span class="req">*</span></label>
+          <input type="text" name="lname" placeholder="Last Name" required>
+        </div>
+      </div>
+
+      <div class="form-grid col-3" style="margin-top:14px;">
+        <div class="fg">
+          <label>Email ID <span class="req">*</span></label>
+          <input type="email" name="email" placeholder="name@college.edu" required>
+        </div>
+        <div class="fg">
+          <label>Phone / WhatsApp <span class="req">*</span></label>
+          <input type="tel" name="phone" placeholder="10-digit Mobile No." pattern="[0-9]{10}" required>
+        </div>
+        <div class="fg">
+          <label>Gender <span class="req">*</span></label>
+          <select name="gender" required>
+            <option value="Male" selected>Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-top:14px;">
+        <div class="fg">
+          <label>College / Institute <span class="req">*</span></label>
+          <input type="text" name="college" placeholder="Full College / University Name" required>
+        </div>
+      </div>
+
+      <div class="form-grid col-3" style="margin-top:14px;">
+        <div class="fg">
+          <label>Course <span class="req">*</span></label>
+          <input type="text" name="course" placeholder="e.g. B.Tech" required>
+        </div>
+        <div class="fg">
+          <label>Branch <span class="req">*</span></label>
+          <input type="text" name="branch" placeholder="e.g. CSE" required>
+        </div>
+        <div class="fg">
+          <label>Duration <span class="req">*</span></label>
+          <select name="duration">
+            <option value="4 Years" selected>4 Years</option>
+            <option value="3 Years">3 Years</option>
+            <option value="2 Years">2 Years</option>
+            <option value="5 Years">5 Years</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid col-3" style="margin-top:14px;">
+        <div class="fg">
+          <label>Current Year <span class="req">*</span></label>
+          <select name="year" required>
+            <option value="1st Year" selected>1st Year</option>
+            <option value="2nd Year">2nd Year</option>
+            <option value="3rd Year">3rd Year</option>
+            <option value="4th Year">4th Year</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Graduating Year <span class="req">*</span></label>
+          <select name="grad_year" required>
+            <option value="2026">2026</option>
+            <option value="2027" selected>2027</option>
+            <option value="2028">2028</option>
+            <option value="2029">2029</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Enrollment No. <span class="req">*</span></label>
+          <input type="text" name="enrollment" placeholder="Roll Number" required>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">
+        <button type="button" class="btn-cancel" onclick="closeModal('add-member-modal')">Cancel</button>
+        <button type="submit" class="btn-save">Add Teammate</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<style>
+.dash-stat-box{background:#fbfaff;border:1.5px solid #e9dffc;border-radius:16px;padding:14px 16px;}
+.dash-stat-label{font-size:11.5px;font-weight:700;color:#6b5d92;display:flex;justify-content:space-between;align-items:center;}
+.tag-lock{font-size:10px;background:#f1f5f9;color:#64748b;padding:2px 6px;border-radius:6px;}
+.pay-tag-verified{background:#dcfce7;color:#15803d;font-weight:700;font-size:13px;padding:4px 10px;border-radius:10px;}
+.pay-tag-pending{background:#fef3c7;color:#b45309;font-weight:700;font-size:13px;padding:4px 10px;border-radius:10px;}
+.btn-receipt{font-size:12px;color:var(--primary);font-weight:700;text-decoration:underline;}
+.btn-copy-sm{background:#ede7fd;border:1px solid #c4b5fd;color:#5b21ff;font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;cursor:pointer;}
+.btn-action-edit{background:#150f38;color:#fff;border:1.5px solid var(--accent);border-radius:24px;padding:8px 18px;font-weight:700;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn-action-edit:hover{background:#2a1a5e;}
+.btn-add-dash{background:linear-gradient(90deg,#6d28d9,#8c45f7);color:#fff;border:0;border-radius:24px;padding:9px 20px;font-weight:700;font-size:14px;cursor:pointer;}
+.btn-add-dash:hover{filter:brightness(1.1);}
+.btn-m-action{width:34px;height:34px;border-radius:10px;border:1.5px solid;display:grid;place-items:center;cursor:pointer;font-size:14px;background:#fff;}
+.btn-m-edit{border-color:#c4b5fd;color:#6d28d9;}
+.btn-m-edit:hover{background:#ede7fd;}
+.btn-m-del{border-color:#fca5a5;color:#dc2626;}
+.btn-m-del:hover{background:#fee2e2;}
+.btn-m-del.disabled{opacity:0.4;cursor:not-allowed;border-color:#cbd5e1;color:#94a3b8;}
+.dash-member-details{display:grid;gap:6px;font-size:13.5px;color:#4c416e;margin-top:6px;}
+.dash-member-details span{color:#8b7fae;font-size:12px;display:inline-block;width:95px;}
+.dash-member-details b{color:#1a1438;font-weight:600;}
+
+/* Modal styles */
+.dash-modal{position:fixed;inset:0;z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
+.dash-modal.active{display:flex;}
+.dash-modal-backdrop{position:absolute;inset:0;background:rgba(15,11,36,.6);backdrop-filter:blur(4px);}
+.dash-modal-card{position:relative;z-index:2;background:#fff;border-radius:24px;width:100%;max-width:520px;padding:28px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;}
+.dash-modal-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #f0eaff;padding-bottom:14px;margin-bottom:18px;}
+.dash-modal-head h3{font-size:20px;font-weight:800;color:#0f0b24;}
+.btn-close-modal{background:none;border:0;font-size:20px;color:#94a3b8;cursor:pointer;line-height:1;}
+.btn-cancel{background:#f1f5f9;border:0;padding:10px 18px;border-radius:12px;font-weight:700;color:#475569;cursor:pointer;}
+.btn-save{background:var(--primary);border:0;padding:10px 22px;border-radius:12px;font-weight:700;color:#fff;cursor:pointer;}
+.btn-save:hover{filter:brightness(1.1);}
+</style>
+
+<script>
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function copyDashText(id, btn) {
+  const text = document.getElementById(id).innerText.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerText;
+    btn.innerText = '✓';
+    setTimeout(() => { btn.innerText = orig; }, 1800);
+  });
+}
+
+function openEditMemberModal(id, fname, lname, email, phone, gender, college, course, branch, duration, year, gradYear, enrollment, isLeader) {
+  document.getElementById('edit-member-form').action = '/member/edit/' + id;
+  document.getElementById('edit-member-title').innerText = isLeader ? '✏️ Edit Team Leader' : '✏️ Edit Member Details';
+  document.getElementById('em-fname').value = fname || '';
+  document.getElementById('em-lname').value = lname || '';
+  const emailInput = document.getElementById('em-email');
+  emailInput.value = email || '';
+  if (isLeader) {
+    emailInput.readOnly = true;
+    emailInput.style.background = '#f1f5f9';
+    emailInput.style.color = '#64748b';
+    document.getElementById('em-email-lock').innerText = '(Leader Email Locked 🔒)';
+  } else {
+    emailInput.readOnly = false;
+    emailInput.style.background = '#fbfaff';
+    emailInput.style.color = '#110d29';
+    document.getElementById('em-email-lock').innerText = '';
+  }
+  document.getElementById('em-phone').value = phone || '';
+  document.getElementById('em-gender').value = gender || 'Male';
+  document.getElementById('em-college').value = college || '';
+  document.getElementById('em-course').value = course || '';
+  document.getElementById('em-branch').value = branch || '';
+  document.getElementById('em-duration').value = duration || '4 Years';
+  document.getElementById('em-year').value = year || '1st Year';
+  document.getElementById('em-grad-year').value = gradYear || '2027';
+  document.getElementById('em-enrollment').value = enrollment || '';
+  openModal('edit-member-modal');
+}
+</script>
+{% endblock %}

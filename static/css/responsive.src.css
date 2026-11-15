@@ -1,6 +1,6 @@
 /* TABLET 700-1099: single column, roomier type */
 @media (min-width:700px){
- .nav{padding:18px 40px}.logo b{font-size:32px}
+ .logo b{font-size:32px}
  .hero{padding:16px 48px 8px;max-width:760px;margin:0 auto}
  .hero>p:not(.script){font-size:21px}.feat a, .feat .feat-card{font-size:15px}.tile{width:74px;height:74px;font-size:32px;border-radius:21px}
  .char{width:250px}
@@ -11,20 +11,19 @@
  body.login-page{height:100vh;height:100dvh;overflow:hidden;display:grid;place-items:center;background:#d9ccf7 url(../images/background-wide.jpg) center center/162.5rem 106.25rem no-repeat}
  .login-page .page{position:relative;width:calc(100rem*var(--kx));height:56.25rem;background:url(../images/background.jpg) 0 0/100% 100% no-repeat}
  .bgpanel{display:none}
- .login-page .nav{position:absolute;inset:0 0 auto 0;height:100px;padding:0;display:block}
+ .login-page .nav{position:absolute;inset:0 0 auto 0;height:100px;padding:0;display:block;background:none;border-bottom:none}
  .login-page .logo{position:absolute;left:calc(67px*var(--kx));top:16px}
  .logo-i{width:72px;height:72px;object-fit:contain}.logo b{font-size:34px}.logo small{font-size:18px}
  .menu-btn{display:none}
- .nav-links,.nav-links.open{display:flex;flex-direction:row;position:absolute;left:calc(500px*var(--kx));top:23px;background:none;box-shadow:none;padding:0;gap:0;border-radius:0}
- .nav-links a{color:#15112e;font-size:18px;font-weight:500;padding:6px 0;margin-right:47px;border-radius:0;border-bottom:3px solid transparent;gap:10px}
- .nav-links a.on{background:none;color:#15112e;border-bottom-color:var(--primary)}.nav-links a.on .i{color:var(--primary)}.nav-links a .i{font-size:23px}
+ .login-page .nav-links,.login-page .nav-links.open{display:flex;flex-direction:row;position:absolute;left:calc(500px*var(--kx));top:23px;transform:none;background:none;box-shadow:none;padding:0;gap:47px;border-radius:0}
+ .login-page .nav-links a{color:#15112e;font-size:18px;font-weight:500;padding:6px 0;margin:0;border-radius:0;border-bottom:3px solid transparent;gap:10px}
+ .login-page .nav-links a.on{background:none;color:#15112e;border-bottom-color:var(--primary)}.login-page .nav-links a.on .i{color:var(--primary)}.login-page .nav-links a .i{font-size:23px}
  .btn-reg{font-size:18px;padding:0;height:46px;width:180px;justify-content:center}
  .login-page .btn-reg{position:absolute;right:47px;top:27px;background:transparent;border-color:#a78bfa}
- body:not(.login-page) .nav-links{position:static}body:not(.login-page) .nav{padding:18px 40px}
  .stage{position:static}.hero{position:static;padding:0;max-width:none}
- .badge{position:absolute;left:calc(75px*var(--kx));top:172px;height:44px;font-size:18px;padding:0 22px 0 18px}
- h1{position:absolute;left:calc(73px*var(--kx));top:229px;margin:0;font-size:80px;line-height:68px;white-space:nowrap}
- .hero>p:not(.script){position:absolute;left:calc(76px*var(--kx));top:398px;margin:0;font-size:21.5px;line-height:28px;width:470px}
+ .login-page .badge{position:absolute;left:calc(75px*var(--kx));top:172px;height:44px;font-size:18px;padding:0 22px 0 18px}
+ .login-page h1{position:absolute;left:calc(73px*var(--kx));top:229px;margin:0;font-size:80px;line-height:68px;white-space:nowrap}
+ .login-page .hero>p:not(.script){position:absolute;left:calc(76px*var(--kx));top:398px;margin:0;font-size:21.5px;line-height:28px;width:470px}
  .feat{position:absolute;left:calc(58px*var(--kx));top:485px;width:560px;margin:0}
  .feat a, .feat .feat-card{flex:none;width:138px;display:flex;justify-content:center;align-items:center;border-right:1px solid #ddd6fe}.feat a:last-child, .feat .feat-card:last-child{border:0;width:152px}
  .tile{width:75px;height:75px;font-size:36px;border-radius:21px}
@@ -84,4 +83,11 @@
  .home .or{margin:17px 0 21px;font-size:22px;gap:24px}
  .home .btn-g{height:64px;font-size:27px;gap:20px}.home .btn-g svg{width:38px;height:38px}
  .home .foot{font-size:25px;line-height:30px;margin-top:23px}
+}
+
+@media (max-width:768px){
+ .col-2,.col-3{grid-template-columns:1fr}
+ .qr-box{flex-direction:column;text-align:center}
+ .reg-card{padding:20px 16px}
+ .btn-same-clg{margin-left:0;margin-top:4px}
 }

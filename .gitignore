@@ -17,6 +17,9 @@ instance/*.db
 .env
 .env.*
 
+# Uploaded payment screenshots
+static/uploads/
+
 # OS & Editor files
 .DS_Store
 Thumbs.db

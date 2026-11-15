@@ -1,0 +1,623 @@
+{% extends 'base.html' %}{% block main %}
+<div class="reg-container" style="max-width:1480px;padding-top:24px;">
+
+  <!-- TOP HEADER BANNER -->
+  <div class="event-hero">
+    <div class="event-hero-badge">
+      {{ icon('bolt') }} ACM CodeNite 2027 · Hackathon Hub
+    </div>
+    <h1 class="event-hero-title">
+      Build. Innovate. <em>Hack the Future.</em>
+    </h1>
+    <p class="event-hero-sub">
+      {{ info.get('tagline', "Central India's Premier 36-Hour National Hackathon") }}
+    </p>
+
+    <div class="event-stats-strip">
+      <div class="stat-pill">{{ icon('clock') }} <b>{{ info.get('duration', '36 Continuous Hours') }}</b></div>
+      <div class="stat-pill">{{ icon('trophy') }} <b>{{ info.get('prize_pool', '₹2,00,000+ Prize Pool') }}</b></div>
+      <div class="stat-pill">{{ icon('calendar') }} <b>{{ info.get('dates', 'March 20 – 22, 2027') }}</b></div>
+      <div class="stat-pill">{{ icon('globe') }} <b>{{ info.get('venue', 'MITS Campus, Gwalior') }}</b></div>
+      <div class="stat-pill">{{ icon('users') }} <b>{{ info.get('team_size', '4 to 6 Members/Team') }}</b></div>
+    </div>
+  </div>
+
+  {% if team %}
+  <!-- ========================================== -->
+  <!-- LOGGED-IN TEAM VIEW: UNSTOP-STYLE TIMELINE -->
+  <!-- ========================================== -->
+  <div class="team-portal-card">
+    <div class="portal-header">
+      <div>
+        <span class="portal-tag">TEAM PORTAL</span>
+        <h2 class="portal-team-name">{{ team.name }} <span class="portal-team-id">({{ team.team_id }})</span></h2>
+        <div class="portal-meta">
+          <span><b>Track:</b> {{ team.domain }}</span>
+          <span><b>Members:</b> {{ team.member_count if team.member_count is defined else '4-6 Registered' }}</span>
+        </div>
+      </div>
+      <div class="portal-status-wrap">
+        {% if team.payment_status == 'Verified' or team.payment_status == 'Approved' %}
+        <span class="badge-status status-verified">{{ icon('check') }} Payment Verified &amp; Confirmed</span>
+        {% elif team.payment_status == 'Pending Verification' %}
+        <span class="badge-status status-pending">{{ icon('clock') }} Payment Pending Verification</span>
+        {% else %}
+        <span class="badge-status status-rejected">{{ icon('info') }} {{ team.payment_status }}</span>
+        {% endif %}
+        <a href="/dashboard" class="btn-portal-dash">{{ icon('users') }} Team Dashboard</a>
+      </div>
+    </div>
+
+    <!-- STAGES STEPPER -->
+    <div class="stepper-wrap">
+      <div class="stepper-title">Hackathon Milestone Progress</div>
+      <div class="stepper-bar">
+        <div class="step-item step-completed">
+          <div class="step-circle">{{ icon('check') }}</div>
+          <div class="step-label">Registration</div>
+          <div class="step-sub">Confirmed</div>
+        </div>
+        <div class="step-line step-line-done"></div>
+        <div class="step-item {{ 'step-completed' if submissions.get(1) else 'step-active' }}">
+          <div class="step-circle">{{ icon('check') if submissions.get(1) else '1' }}</div>
+          <div class="step-label">Round 1: Idea PPT</div>
+          <div class="step-sub">{{ 'Submitted' if submissions.get(1) else 'Open Now' }}</div>
+        </div>
+        <div class="step-line {{ 'step-line-done' if submissions.get(1) else '' }}"></div>
+        <div class="step-item {{ 'step-completed' if submissions.get(2) else '' }}">
+          <div class="step-circle">{{ icon('check') if submissions.get(2) else '2' }}</div>
+          <div class="step-label">Round 2: GitHub</div>
+          <div class="step-sub">{{ 'Submitted' if submissions.get(2) else 'Upcoming' }}</div>
+        </div>
+        <div class="step-line {{ 'step-line-done' if submissions.get(2) else '' }}"></div>
+        <div class="step-item {{ 'step-completed' if submissions.get(3) else '' }}">
+          <div class="step-circle">{{ icon('check') if submissions.get(3) else '3' }}</div>
+          <div class="step-label">Round 3: Final Demo</div>
+          <div class="step-sub">{{ 'Submitted' if submissions.get(3) else 'Upcoming' }}</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+          <div class="step-circle">{{ icon('trophy') }}</div>
+          <div class="step-label">Grand Jury</div>
+          <div class="step-sub">Day 3</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUND SUBMISSION ACCORDIONS / CARDS -->
+    <h3 style="font-size:22px;font-weight:800;color:#0d0a1f;margin:28px 0 16px;display:flex;align-items:center;gap:10px;">
+      {{ icon('upload') }} Round Submissions &amp; Deliverables
+    </h3>
+
+    <div class="rounds-grid">
+      {% for r in rounds %}
+      {% set sub = submissions.get(r.id) %}
+      <div class="round-card {{ 'has-submission' if sub else '' }}">
+        <div class="round-card-header">
+          <div>
+            <div class="round-stage-badge">{{ r.stage_name }}</div>
+            <h4 class="round-card-title">{{ r.title }}</h4>
+            <div class="round-deadline">
+              {{ icon('clock') }} <b>Deadline:</b> {{ r.deadline }}
+            </div>
+          </div>
+          <div>
+            {% if sub %}
+            <span class="sub-badge sub-done">{{ icon('check') }} Submitted</span>
+            {% else %}
+            <span class="sub-badge sub-open">{{ icon('bolt') }} {{ r.status_label }}</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <p class="round-desc">{{ r.description }}</p>
+
+        {% if sub %}
+        <!-- EXISTING SUBMISSION PREVIEW -->
+        <div class="sub-preview-box">
+          <div class="sub-preview-title">
+            <span>✓ Current Submission: <b>{{ sub.project_title or 'Untitled Project' }}</b></span>
+            <span style="font-size:12px;color:#6b5d92;">Last updated: {{ sub.updated_at or sub.submitted_at }}</span>
+          </div>
+          {% if sub.project_summary %}
+          <p class="sub-preview-summary">{{ sub.project_summary }}</p>
+          {% endif %}
+
+          <div class="sub-preview-links">
+            {% if sub.file_path %}
+            <a href="{{ url_for('static', filename='uploads/submissions/' + sub.file_path) }}" target="_blank" class="sub-link-chip">
+              {{ icon('doc') }} Download Uploaded Deck ({{ sub.file_path.split('.')[-1]|upper }})
+            </a>
+            {% endif %}
+            {% if sub.drive_link %}
+            <a href="{{ sub.drive_link }}" target="_blank" rel="noopener" class="sub-link-chip">
+              {{ icon('link') }} Cloud / Presentation Link {{ icon('external') }}
+            </a>
+            {% endif %}
+            {% if sub.github_link %}
+            <a href="{{ sub.github_link }}" target="_blank" rel="noopener" class="sub-link-chip">
+              {{ icon('github') }} GitHub Repository {{ icon('external') }}
+            </a>
+            {% endif %}
+            {% if sub.demo_link %}
+            <a href="{{ sub.demo_link }}" target="_blank" rel="noopener" class="sub-link-chip">
+              {{ icon('globe') }} Live Demo / Video Link {{ icon('external') }}
+            </a>
+            {% endif %}
+          </div>
+
+          <button type="button" class="btn-toggle-edit" onclick="toggleSubmissionForm('form-round-{{ r.id }}', this)">
+            ✏️ Edit Submission Details
+          </button>
+        </div>
+        {% endif %}
+
+        <!-- SUBMISSION FORM -->
+        <div id="form-round-{{ r.id }}" class="sub-form-container" style="{{ 'display:none;' if sub else 'display:block;' }}">
+          <form method="post" action="/events/submit/{{ r.id }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf" value="{{ csrf() }}">
+
+            <div class="form-grid col-2">
+              <div class="fg">
+                <label>Project / Solution Title <span class="req">*</span></label>
+                <input type="text" name="project_title" value="{{ sub.project_title if sub else '' }}" placeholder="e.g. SmartAgro AI Assistant" required>
+              </div>
+
+              {% if r.submission_type == 'deck' %}
+              <div class="fg">
+                <label>Google Drive / Pitch Deck URL</label>
+                <input type="url" name="drive_link" value="{{ sub.drive_link if sub else '' }}" placeholder="https://drive.google.com/... or Canva link">
+              </div>
+              {% elif r.submission_type == 'progress' %}
+              <div class="fg">
+                <label>Public GitHub Repository URL <span class="req">*</span></label>
+                <input type="url" name="github_link" value="{{ sub.github_link if sub else '' }}" placeholder="https://github.com/your-team/repo" required>
+              </div>
+              {% else %}
+              <div class="fg">
+                <label>Deployed Project Live URL</label>
+                <input type="url" name="demo_link" value="{{ sub.demo_link if sub else '' }}" placeholder="https://myproject.vercel.app">
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="fg" style="margin-top:14px;">
+              <label>Project Abstract / Brief Summary <span class="req">*</span></label>
+              <textarea name="project_summary" rows="3" placeholder="Briefly summarize your problem statement, technical stack, core functionality, and live progress..." required>{{ sub.project_summary if sub else '' }}</textarea>
+            </div>
+
+            {% if r.submission_type == 'deck' %}
+            <div class="fg" style="margin-top:14px;">
+              <label>Upload Pitch Deck (PPT, PPTX, or PDF) <span style="font-weight:400;color:#6b5d92;font-size:12px;">(Max 25MB)</span></label>
+              <input type="file" name="submission_file" accept=".pdf,.ppt,.pptx">
+              {% if sub and sub.file_path %}
+              <small style="color:#047857;margin-top:4px;">Current file: {{ sub.file_path }} (Uploading a new file will replace it)</small>
+              {% endif %}
+            </div>
+            {% elif r.submission_type == 'final' %}
+            <div class="form-grid col-2" style="margin-top:14px;">
+              <div class="fg">
+                <label>GitHub Repository URL <span class="req">*</span></label>
+                <input type="url" name="github_link" value="{{ sub.github_link if sub else '' }}" placeholder="https://github.com/..." required>
+              </div>
+              <div class="fg">
+                <label>2-Minute Video Demo URL (YouTube / Drive) <span class="req">*</span></label>
+                <input type="url" name="drive_link" value="{{ sub.drive_link if sub else '' }}" placeholder="https://youtube.com/watch?v=... or Drive" required>
+              </div>
+            </div>
+            {% endif %}
+
+            <div style="margin-top:18px;display:flex;gap:12px;align-items:center;">
+              <button type="submit" class="btn-submit-sub">
+                {{ icon('upload') }} {{ 'Update Submission' if sub else 'Submit Deliverable' }}
+              </button>
+              {% if sub %}
+              <button type="button" class="btn-cancel-edit" onclick="toggleSubmissionForm('form-round-{{ r.id }}')">
+                Cancel
+              </button>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ========================================== -->
+  <!-- PUBLIC & LOGGED-IN: INTERACTIVE EVENT TABS -->
+  <!-- ========================================== -->
+  <div class="event-nav-tabs">
+    <button class="event-tab-btn active" onclick="switchEventTab('tab-schedule', this)">
+      {{ icon('clock') }} 36-Hour Schedule
+    </button>
+    <button class="event-tab-btn" onclick="switchEventTab('tab-tracks', this)">
+      {{ icon('bulb') }} Themes &amp; Problem Statements
+    </button>
+    <button class="event-tab-btn" onclick="switchEventTab('tab-rules', this)">
+      {{ icon('doc') }} Rules &amp; Guidelines
+    </button>
+    <button class="event-tab-btn" onclick="switchEventTab('tab-judging', this)">
+      {{ icon('trophy') }} Judging Criteria
+    </button>
+    <button class="event-tab-btn" onclick="switchEventTab('tab-about', this)">
+      {{ icon('info') }} About &amp; Venue
+    </button>
+  </div>
+
+  <!-- TAB 1: 36-HOUR SCHEDULE -->
+  <section id="tab-schedule" class="event-tab-content active">
+    <div class="sec-head">
+      <span class="sec-badge">{{ icon('clock') }} Chronological Schedule</span>
+      <h2 class="sec-title">The 36-Hour <em>Timeline</em></h2>
+      <p class="sec-sub">From the opening keynote to the final grand jury pitches — track every hour of ACM CodeNite 2027.</p>
+    </div>
+
+    <div class="schedule-days-container">
+      {% for day_name, items in schedule_by_day.items() %}
+      <div class="schedule-day-column">
+        <div class="day-header-pill">{{ day_name }}</div>
+        <div class="timeline-items-list">
+          {% for item in items %}
+          <div class="timeline-slot-card">
+            <div class="slot-time">
+              {{ icon('clock') }} {{ item.time_slot }}
+              {% if item.badge %}
+              <span class="slot-badge badge-{{ item.badge|lower|replace(' ', '-') }}">{{ item.badge }}</span>
+              {% endif %}
+            </div>
+            <h4 class="slot-title">{{ item.title }}</h4>
+            <p class="slot-desc">{{ item.description }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- TAB 2: THEMES & PROBLEM STATEMENTS -->
+  <section id="tab-tracks" class="event-tab-content">
+    <div class="sec-head">
+      <span class="sec-badge">{{ icon('bulb') }} Innovation Areas</span>
+      <h2 class="sec-title">Themes &amp; <em>Problem Statements</em></h2>
+      <p class="sec-sub">Select your domain track and engineer high-impact solutions to real-world challenges.</p>
+    </div>
+
+    <div class="tracks-grid">
+      {% for track in tracks %}
+      <div class="track-card" style="border-top: 4px solid {{ track.color_accent or '#8b5cf6' }};">
+        <div class="track-head">
+          <div class="track-icon-wrap" style="color:{{ track.color_accent or '#8b5cf6' }};background:rgba(168,85,247,.12);">
+            {{ icon(track.icon) }}
+          </div>
+          <div>
+            <h3 class="track-title">{{ track.title }}</h3>
+            <span class="track-tagline">{{ track.tagline }}</span>
+          </div>
+        </div>
+        <p class="track-desc">{{ track.description }}</p>
+
+        <!-- Problem statements for this track -->
+        {% set p_list = problems_by_track.get(track.id, []) %}
+        {% if p_list %}
+        <div class="track-problems-wrap">
+          <div class="track-ps-title">{{ icon('bolt') }} Challenge Statements:</div>
+          {% for p in p_list %}
+          <div class="ps-item">
+            <span class="ps-code">{{ p.code }}</span>
+            <b class="ps-name">{{ p.title }}</b>
+            <p class="ps-desc">{{ p.description }}</p>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- TAB 3: RULES & GUIDELINES -->
+  <section id="tab-rules" class="event-tab-content">
+    <div class="sec-head">
+      <span class="sec-badge">{{ icon('doc') }} Code of Conduct</span>
+      <h2 class="sec-title">Rules &amp; <em>Guidelines</em></h2>
+      <p class="sec-sub">Please review the official guidelines to ensure a fair, respectful, and spirited hackathon.</p>
+    </div>
+
+    <div class="rules-grid">
+      {% for cat, rule_items in rules_by_category.items() %}
+      <div class="rule-card">
+        <div class="rule-category-title">{{ icon('check') }} {{ cat }}</div>
+        <ul class="rule-list">
+          {% for r in rule_items %}
+          <li>{{ r }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- TAB 4: JUDGING CRITERIA -->
+  <section id="tab-judging" class="event-tab-content">
+    <div class="sec-head">
+      <span class="sec-badge">{{ icon('trophy') }} Evaluation Standards</span>
+      <h2 class="sec-title">Judging <em>Criteria</em></h2>
+      <p class="sec-sub">Submissions are evaluated holistically by our panel of industry leaders and academia experts.</p>
+    </div>
+
+    <div class="judging-grid">
+      {% for j in judging %}
+      <div class="judge-card">
+        <div class="judge-header">
+          <h3 class="judge-name">{{ j.criterion }}</h3>
+          <span class="judge-weight">{{ j.weightage }}</span>
+        </div>
+        <div class="judge-bar-track">
+          <div class="judge-bar-fill" style="width: {{ j.weightage }};"></div>
+        </div>
+        <p class="judge-desc">{{ j.description }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- TAB 5: ABOUT & VENUE -->
+  <section id="tab-about" class="event-tab-content">
+    <div class="sec-head">
+      <span class="sec-badge">{{ icon('info') }} Hackathon Overview</span>
+      <h2 class="sec-title">About <em>ACM CodeNite 2027</em></h2>
+      <p class="sec-sub">Everything you need to know about the host campus, facilities, and mentorship.</p>
+    </div>
+
+    <div class="about-grid">
+      <div class="about-card">
+        <h3 class="about-card-title">{{ icon('bolt') }} The Vision</h3>
+        <p class="about-text">{{ info.get('about_p1', '') }}</p>
+        <p class="about-text" style="margin-top:12px;">{{ info.get('about_p2', '') }}</p>
+      </div>
+
+      <div class="about-card">
+        <h3 class="about-card-title">{{ icon('globe') }} Venue &amp; Facilities Provided</h3>
+        <div class="facility-list">
+          <div class="facility-item">
+            <span class="fac-icon">📶</span>
+            <div><b>Gigabit Campus Wi-Fi &amp; LAN</b><p>High-speed uninterrupted network coverage throughout the arena.</p></div>
+          </div>
+          <div class="facility-item">
+            <span class="fac-icon">⚡</span>
+            <div><b>Unbroken Power Supply</b><p>Dedicated surge-protected power strips for every team station.</p></div>
+          </div>
+          <div class="facility-item">
+            <span class="fac-icon">🍕</span>
+            <div><b>Nutritious Meals &amp; Midnight Snacks</b><p>Breakfast, lunch, high-tea, dinner, midnight pizza, and tea/coffee bars.</p></div>
+          </div>
+          <div class="facility-item">
+            <span class="fac-icon">🤝</span>
+            <div><b>Round-the-Clock Mentors</b><p>Architects and engineers on the floor to guide you through technical hurdles.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTTOM CALL TO ACTION -->
+  <div class="event-cta-box">
+    {% if not team %}
+    <h3 style="font-size:28px;font-weight:800;color:#0d0a1f;margin-bottom:8px;">Ready to Build the Next Big Thing?</h3>
+    <p style="font-size:16px;color:#5a4f7c;max-width:580px;margin:0 auto 24px;">
+      Registrations are live! Assemble your squad of 4 to 6 members, register your team, and claim your spot at ACM CodeNite 2027.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/team-registration" class="btn-cta-main">
+        Register Your Team Now (₹50) {{ icon('arrow') }}
+      </a>
+      <a href="/login" class="btn-cta-sub">
+        Existing Team? Login {{ icon('arrow') }}
+      </a>
+    </div>
+    {% else %}
+    <h3 style="font-size:28px;font-weight:800;color:#0d0a1f;margin-bottom:8px;">All Systems Go, Team {{ team.name }}!</h3>
+    <p style="font-size:16px;color:#5a4f7c;max-width:580px;margin:0 auto 24px;">
+      Keep pushing code, adhere to milestone deadlines, and consult mentors on the floor whenever you hit a roadblock.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/dashboard" class="btn-cta-main">
+        {{ icon('users') }} Manage Team Roster &amp; Credentials
+      </a>
+      <button type="button" class="btn-cta-sub" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+        {{ icon('upload') }} View Submission Milestones
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- STYLING SPECIFIC TO EVENT PAGE -->
+<style>
+.event-hero{text-align:center;padding:28px 20px 36px;margin-bottom:28px;}
+.event-hero-badge{display:inline-flex;align-items:center;gap:10px;background:#e9ddff;border:1.5px solid var(--secondary);color:#2b1a66;border-radius:30px;padding:8px 22px;font-weight:700;font-size:15px;margin-bottom:14px;}
+.event-hero-title{font-size:clamp(36px,6vw,56px);font-weight:800;color:#0d0a1f;letter-spacing:-.03em;line-height:1.1;margin-bottom:12px;}
+.event-hero-title em{font-style:normal;color:var(--primary);}
+.event-hero-sub{font-size:clamp(16px,2vw,20px);color:#5b4e80;max-width:720px;margin:0 auto 24px;font-weight:500;}
+.event-stats-strip{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:18px;}
+.stat-pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.8);border:1.5px solid #ded5fb;padding:8px 18px;border-radius:30px;font-size:14.5px;color:#1e1742;box-shadow:0 4px 15px rgba(109,40,217,.04);}
+.stat-pill b{color:#5b1ed6;}
+
+/* TEAM PORTAL CARD (LOGGED IN) */
+.team-portal-card{background:#ffffff;border:2px solid #a855f7;border-radius:26px;padding:34px 40px;margin-bottom:38px;box-shadow:0 18px 45px rgba(109,40,217,.12);}
+.portal-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;border-bottom:1.5px solid #f0eaff;padding-bottom:22px;}
+.portal-tag{font-size:12px;font-weight:800;letter-spacing:1px;background:#ede7fd;color:var(--primary);padding:4px 12px;border-radius:12px;display:inline-block;margin-bottom:6px;}
+.portal-team-name{font-size:28px;font-weight:800;color:#0d0a1f;line-height:1.2;}
+.portal-team-id{color:#7c3aed;font-weight:700;}
+.portal-meta{display:flex;gap:20px;margin-top:8px;font-size:14.5px;color:#5c507e;}
+.portal-status-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.badge-status{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:20px;font-size:13.5px;font-weight:700;}
+.status-verified{background:#dcfce7;color:#166534;border:1.5px solid #86efac;}
+.status-pending{background:#fef3c7;color:#92400e;border:1.5px solid #fde68a;}
+.status-rejected{background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;}
+.btn-portal-dash{display:inline-flex;align-items:center;gap:8px;background:#150f38;color:#fff;border:1.5px solid #a855f7;border-radius:20px;padding:8px 16px;font-size:13.5px;font-weight:700;transition:all .2s;}
+.btn-portal-dash:hover{background:#2b186b;}
+
+/* STEPPER */
+.stepper-wrap{margin-top:26px;background:#faf7ff;border:1.5px solid #eae2fd;border-radius:20px;padding:24px 28px;}
+.stepper-title{font-size:14px;font-weight:700;color:#6b5d92;text-transform:uppercase;letter-spacing:.8px;margin-bottom:18px;}
+.stepper-bar{display:flex;align-items:center;justify-content:space-between;position:relative;overflow-x:auto;padding-bottom:6px;}
+.step-item{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:110px;z-index:2;}
+.step-circle{width:42px;height:42px;border-radius:50%;background:#e2d9fb;color:#6b5d92;display:grid;place-items:center;font-weight:800;font-size:16px;border:3px solid #fff;box-shadow:0 4px 12px rgba(109,40,217,.1);transition:all .3s;}
+.step-item.step-active .step-circle{background:#7c3aed;color:#fff;box-shadow:0 0 0 4px rgba(168,85,247,.3);}
+.step-item.step-completed .step-circle{background:#16a34a;color:#fff;}
+.step-label{font-size:13.5px;font-weight:700;color:#1d153e;margin-top:8px;}
+.step-sub{font-size:11.5px;color:#7e72a4;}
+.step-line{flex:1;height:4px;background:#e2d9fb;margin:0 -10px 22px;z-index:1;}
+.step-line.step-line-done{background:#16a34a;}
+
+/* ROUND CARDS */
+.rounds-grid{display:grid;gap:20px;}
+.round-card{background:#ffffff;border:1.5px solid #e0d5fa;border-radius:22px;padding:26px 30px;box-shadow:0 8px 24px rgba(109,40,217,.05);transition:all .2s;}
+.round-card.has-submission{border-color:#86efac;background:linear-gradient(180deg,#fdfffd,#ffffff);}
+.round-card-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px;}
+.round-stage-badge{font-size:12px;font-weight:800;color:#6d28d9;text-transform:uppercase;letter-spacing:.6px;}
+.round-card-title{font-size:20px;font-weight:800;color:#0d0a1f;margin:2px 0 6px;}
+.round-deadline{font-size:13.5px;color:#5a4f7c;display:flex;align-items:center;gap:6px;}
+.sub-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:14px;font-size:12.5px;font-weight:700;}
+.sub-badge.sub-done{background:#dcfce7;color:#166534;border:1px solid #86efac;}
+.sub-badge.sub-open{background:#ede7fd;color:#5b1ed6;border:1px solid #c4b5fd;}
+.round-desc{font-size:14.5px;color:#4c416e;line-height:1.55;margin-bottom:16px;}
+
+/* PREVIEW BOX */
+.sub-preview-box{background:#f8faff;border:1.5px solid #bbf7d0;border-radius:16px;padding:18px 22px;margin-top:12px;}
+.sub-preview-title{display:flex;justify-content:space-between;align-items:center;font-size:14.5px;font-weight:700;color:#166534;border-bottom:1px solid #dcfce7;padding-bottom:8px;margin-bottom:8px;}
+.sub-preview-summary{font-size:14px;color:#374151;line-height:1.5;margin-bottom:12px;}
+.sub-preview-links{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+.sub-link-chip{display:inline-flex;align-items:center;gap:8px;background:#ffffff;border:1px solid #86efac;color:#15803d;padding:6px 14px;border-radius:12px;font-size:13px;font-weight:700;transition:all .2s;}
+.sub-link-chip:hover{background:#f0fdf4;}
+.btn-toggle-edit{background:none;border:0;color:#6d28d9;font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;}
+
+/* FORM IN ROUND */
+.sub-form-container{background:#faf7ff;border:1.5px dashed #a855f7;border-radius:18px;padding:22px 24px;margin-top:14px;}
+.btn-submit-sub{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(90deg,#5b1ed6,#8c45f7);color:#fff;border:0;border-radius:24px;padding:12px 26px;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s;}
+.btn-submit-sub:hover{filter:brightness(1.1);}
+.btn-cancel-edit{background:none;border:1px solid #d1d5db;color:#4b5563;padding:11px 20px;border-radius:24px;font-weight:600;font-size:14px;cursor:pointer;}
+
+/* EVENT TABS NAVIGATION */
+.event-nav-tabs{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;margin-bottom:32px;border-bottom:2px solid #eae2fd;}
+.event-tab-btn{display:inline-flex;align-items:center;gap:10px;background:#ffffff;border:1.5px solid #ded5fb;padding:12px 22px;border-radius:18px 18px 0 0;font-size:16px;font-weight:700;color:#3b2d66;cursor:pointer;white-space:nowrap;transition:all .2s;border-bottom:0;}
+.event-tab-btn:hover{background:#fbf9ff;color:var(--primary);}
+.event-tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 -4px 15px rgba(109,40,217,.15);}
+.event-tab-content{display:none;}
+.event-tab-content.active{display:block;animation:fadein .3s ease;}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* SECTION HEADERS */
+.sec-head{text-align:center;margin-bottom:34px;}
+.sec-badge{display:inline-flex;align-items:center;gap:8px;background:#ede7fd;border:1px solid var(--secondary);color:#2b1a66;border-radius:25px;padding:6px 18px;font-size:13.5px;font-weight:700;margin-bottom:10px;}
+.sec-title{font-size:clamp(28px,4.5vw,42px);font-weight:800;color:#0d0a1f;letter-spacing:-.03em;}
+.sec-title em{font-style:normal;color:var(--primary);}
+.sec-sub{font-size:16px;color:#5c507e;max-width:680px;margin:8px auto 0;}
+
+/* SCHEDULE GRID */
+.schedule-days-container{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:24px;}
+.schedule-day-column{background:#ffffff;border:1.5px solid rgba(168,85,247,.25);border-radius:24px;padding:26px;box-shadow:0 10px 30px rgba(109,40,217,.05);}
+.day-header-pill{display:inline-block;background:linear-gradient(90deg,#5b1ed6,#8c45f7);color:#fff;font-weight:800;font-size:16px;padding:8px 22px;border-radius:20px;margin-bottom:20px;}
+.timeline-items-list{display:grid;gap:14px;position:relative;}
+.timeline-slot-card{background:#fcfaff;border:1px solid #ebdfff;border-radius:16px;padding:16px 18px;transition:all .2s;}
+.timeline-slot-card:hover{border-color:var(--primary);background:#fff;box-shadow:0 6px 18px rgba(109,40,217,.08);}
+.slot-time{font-size:12.5px;font-weight:700;color:#6b5d92;display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.slot-badge{font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;text-transform:uppercase;margin-left:auto;}
+.badge-check-in{background:#e0f2fe;color:#0369a1;}
+.badge-ceremony{background:#fef3c7;color:#92400e;}
+.badge-hacking-live{background:#dcfce7;color:#166534;}
+.badge-mentorship{background:#ede7fd;color:#6d28d9;}
+.badge-submission{background:#fee2e2;color:#b91c1c;}
+.badge-meal{background:#f1f5f9;color:#475569;}
+.badge-activity{background:#fdf2f8;color:#be185d;}
+.badge-judging{background:#faf5ff;color:#7e22ce;}
+.badge-code-freeze{background:#fef2f2;color:#991b1b;}
+.slot-title{font-size:16.5px;font-weight:800;color:#0d0a1f;margin-bottom:4px;}
+.slot-desc{font-size:13.5px;color:#554a78;line-height:1.5;}
+
+/* TRACKS GRID */
+.tracks-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px;}
+.track-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:24px;padding:28px;box-shadow:0 12px 32px rgba(109,40,217,.06);display:flex;flex-direction:column;}
+.track-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:14px;}
+.track-icon-wrap{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;font-size:26px;flex-shrink:0;}
+.track-title{font-size:20px;font-weight:800;color:#0d0a1f;}
+.track-tagline{font-size:13px;color:#6d5f96;font-weight:600;}
+.track-desc{font-size:14.5px;color:#493e6c;line-height:1.55;margin-bottom:20px;}
+.track-problems-wrap{margin-top:auto;background:#faf7ff;border:1.5px dashed #ded4fa;border-radius:16px;padding:16px;display:grid;gap:12px;}
+.track-ps-title{font-size:13px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.6px;}
+.ps-item{background:#fff;border:1px solid #ebdfff;border-radius:12px;padding:12px;}
+.ps-code{font-size:11px;font-weight:800;background:#ede7fd;color:#5b1ed6;padding:2px 6px;border-radius:6px;display:inline-block;margin-bottom:4px;}
+.ps-name{display:block;font-size:14px;color:#130d2d;margin-bottom:4px;}
+.ps-desc{font-size:12.5px;color:#615582;line-height:1.45;}
+
+/* RULES GRID */
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:24px;}
+.rule-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.25);border-radius:24px;padding:28px;box-shadow:0 10px 30px rgba(109,40,217,.05);}
+.rule-category-title{font-size:18px;font-weight:800;color:var(--primary);display:flex;align-items:center;gap:10px;margin-bottom:16px;border-bottom:1.5px solid #f0eaff;padding-bottom:10px;}
+.rule-list{list-style:none;display:grid;gap:12px;padding-left:0;}
+.rule-list li{font-size:14px;color:#3b2d66;line-height:1.6;position:relative;padding-left:22px;}
+.rule-list li:before{content:"•";color:var(--primary);font-size:20px;position:absolute;left:4px;top:-2px;}
+
+/* JUDGING GRID */
+.judging-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px;}
+.judge-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.25);border-radius:24px;padding:26px;box-shadow:0 10px 30px rgba(109,40,217,.05);}
+.judge-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.judge-name{font-size:17.5px;font-weight:800;color:#0d0a1f;}
+.judge-weight{font-size:18px;font-weight:800;color:var(--primary);background:#ede7fd;padding:4px 12px;border-radius:12px;}
+.judge-bar-track{width:100%;height:8px;background:#ede7fd;border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.judge-bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:10px;}
+.judge-desc{font-size:14px;color:#504474;line-height:1.55;}
+
+/* ABOUT GRID */
+.about-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:26px;}
+.about-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.25);border-radius:24px;padding:32px;box-shadow:0 10px 30px rgba(109,40,217,.05);}
+.about-card-title{font-size:22px;font-weight:800;color:#0d0a1f;display:flex;align-items:center;gap:10px;margin-bottom:16px;border-bottom:1.5px solid #f0eaff;padding-bottom:12px;}
+.about-text{font-size:15px;color:#453a6d;line-height:1.65;}
+.facility-list{display:grid;gap:16px;}
+.facility-item{display:flex;align-items:flex-start;gap:14px;background:#faf7ff;border:1px solid #ebdfff;border-radius:16px;padding:14px 16px;}
+.fac-icon{font-size:24px;flex-shrink:0;}
+.facility-item b{display:block;font-size:15px;color:#130d2d;margin-bottom:2px;}
+.facility-item p{font-size:13px;color:#5d5080;margin:0;line-height:1.45;}
+
+/* CTA BOX */
+.event-cta-box{margin:50px 0 20px;background:linear-gradient(135deg,#f8f4ff,#eee4ff);border:2px dashed #a855f7;border-radius:28px;padding:44px 28px;text-align:center;box-shadow:0 15px 40px rgba(109,40,217,.08);}
+.btn-cta-main{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(90deg,#5b1ed6,#8c45f7);color:#fff;border-radius:30px;padding:14px 32px;font-size:17px;font-weight:800;transition:all .2s;box-shadow:0 8px 24px rgba(109,40,217,.35);}
+.btn-cta-main:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn-cta-sub{display:inline-flex;align-items:center;gap:10px;background:#fff;color:var(--primary);border:2px solid var(--primary);border-radius:30px;padding:12px 28px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-cta-sub:hover{background:#f5efff;}
+
+@media (max-width:768px){
+  .team-portal-card{padding:22px 18px;}
+  .event-nav-tabs{flex-wrap:nowrap;overflow-x:auto;}
+  .stepper-bar{justify-content:flex-start;gap:12px;}
+  .step-line{min-width:30px;}
+}
+</style>
+
+<script>
+function switchEventTab(tabId, btn) {
+  document.querySelectorAll('.event-tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.event-tab-btn').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById(tabId);
+  if (target) target.classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+function toggleSubmissionForm(formId, btn) {
+  const form = document.getElementById(formId);
+  if (!form) return;
+  if (form.style.display === 'none' || form.style.display === '') {
+    form.style.display = 'block';
+    if (btn) btn.textContent = '✕ Close Edit Form';
+  } else {
+    form.style.display = 'none';
+    if (btn) btn.textContent = '✏️ Edit Submission Details';
+  }
+}
+</script>
+{% endblock %}

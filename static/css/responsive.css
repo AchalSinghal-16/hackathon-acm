@@ -1,6 +1,6 @@
 /* TABLET 700-1099: single column, roomier type */
 @media (min-width:700px){
- .nav{padding:1.125rem 2.5rem}.logo b{font-size:2rem}
+ .logo b{font-size:2rem}
  .hero{padding:1rem 3rem 0.5rem;max-width:47.5rem;margin:0 auto}
  .hero>p:not(.script){font-size:1.3125rem}.feat a, .feat .feat-card{font-size:0.9375rem}.tile{width:4.625rem;height:4.625rem;font-size:2rem;border-radius:1.3125rem}
  .char{width:15.625rem}
@@ -11,20 +11,19 @@
  body.login-page{height:100vh;height:100dvh;overflow:hidden;display:grid;place-items:center;background:#d9ccf7 url(../images/background-wide.jpg) center center/162.5rem 106.25rem no-repeat}
  .login-page .page{position:relative;width:calc(100rem*var(--kx));height:56.25rem;background:url(../images/background.jpg) 0 0/100% 100% no-repeat}
  .bgpanel{display:none}
- .login-page .nav{position:absolute;inset:0 0 auto 0;height:6.25rem;padding:0;display:block}
+ .login-page .nav{position:absolute;inset:0 0 auto 0;height:6.25rem;padding:0;display:block;background:none;border-bottom:none}
  .login-page .logo{position:absolute;left:calc(4.1875rem*var(--kx));top:1rem}
  .logo-i{width:4.5rem;height:4.5rem;object-fit:contain}.logo b{font-size:2.125rem}.logo small{font-size:1.125rem}
  .menu-btn{display:none}
- .nav-links,.nav-links.open{display:flex;flex-direction:row;position:absolute;left:calc(31.25rem*var(--kx));top:1.4375rem;background:none;box-shadow:none;padding:0;gap:0;border-radius:0}
- .nav-links a{color:#15112e;font-size:1.125rem;font-weight:500;padding:0.375rem 0;margin-right:2.9375rem;border-radius:0;border-bottom:0.1875rem solid transparent;gap:0.625rem}
- .nav-links a.on{background:none;color:#15112e;border-bottom-color:var(--primary)}.nav-links a.on .i{color:var(--primary)}.nav-links a .i{font-size:1.4375rem}
+ .login-page .nav-links,.login-page .nav-links.open{display:flex;flex-direction:row;position:absolute;left:calc(31.25rem*var(--kx));top:1.4375rem;transform:none;background:none;box-shadow:none;padding:0;gap:2.9375rem;border-radius:0}
+ .login-page .nav-links a{color:#15112e;font-size:1.125rem;font-weight:500;padding:0.375rem 0;margin:0;border-radius:0;border-bottom:0.1875rem solid transparent;gap:0.625rem}
+ .login-page .nav-links a.on{background:none;color:#15112e;border-bottom-color:var(--primary)}.login-page .nav-links a.on .i{color:var(--primary)}.login-page .nav-links a .i{font-size:1.4375rem}
  .btn-reg{font-size:1.125rem;padding:0;height:2.875rem;width:11.25rem;justify-content:center}
  .login-page .btn-reg{position:absolute;right:2.9375rem;top:1.6875rem;background:transparent;border-color:#a78bfa}
- body:not(.login-page) .nav-links{position:static}body:not(.login-page) .nav{padding:1.125rem 2.5rem}
  .stage{position:static}.hero{position:static;padding:0;max-width:none}
- .badge{position:absolute;left:calc(4.6875rem*var(--kx));top:10.75rem;height:2.75rem;font-size:1.125rem;padding:0 1.375rem 0 1.125rem}
- h1{position:absolute;left:calc(4.5625rem*var(--kx));top:14.3125rem;margin:0;font-size:5rem;line-height:4.25rem;white-space:nowrap}
- .hero>p:not(.script){position:absolute;left:calc(4.75rem*var(--kx));top:24.875rem;margin:0;font-size:1.3438rem;line-height:1.75rem;width:29.375rem}
+ .login-page .badge{position:absolute;left:calc(4.6875rem*var(--kx));top:10.75rem;height:2.75rem;font-size:1.125rem;padding:0 1.375rem 0 1.125rem}
+ .login-page h1{position:absolute;left:calc(4.5625rem*var(--kx));top:14.3125rem;margin:0;font-size:5rem;line-height:4.25rem;white-space:nowrap}
+ .login-page .hero>p:not(.script){position:absolute;left:calc(4.75rem*var(--kx));top:24.875rem;margin:0;font-size:1.3438rem;line-height:1.75rem;width:29.375rem}
  .feat{position:absolute;left:calc(3.625rem*var(--kx));top:30.3125rem;width:35rem;margin:0}
  .feat a, .feat .feat-card{flex:none;width:8.625rem;display:flex;justify-content:center;align-items:center;border-right:0.0625rem solid #ddd6fe}.feat a:last-child, .feat .feat-card:last-child{border:0;width:9.5rem}
  .tile{width:4.6875rem;height:4.6875rem;font-size:2.25rem;border-radius:1.3125rem}
@@ -84,4 +83,11 @@
  .home .or{margin:1.0625rem 0 1.3125rem;font-size:1.375rem;gap:1.5rem}
  .home .btn-g{height:4rem;font-size:1.6875rem;gap:1.25rem}.home .btn-g svg{width:2.375rem;height:2.375rem}
  .home .foot{font-size:1.5625rem;line-height:1.875rem;margin-top:1.4375rem}
+}
+
+@media (max-width:768px){
+ .col-2,.col-3{grid-template-columns:1fr}
+ .qr-box{flex-direction:column;text-align:center}
+ .reg-card{padding:1.25rem 1rem}
+ .btn-same-clg{margin-left:0;margin-top:0.25rem}
 }

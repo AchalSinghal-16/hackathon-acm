@@ -1,4 +1,4 @@
-# ACM CodeNight 2027 - Flask site
+# ACM CodeNite 2027 - Flask site
 
     pip install -r requirements.txt
     python app.py          # http://127.0.0.1:5000
