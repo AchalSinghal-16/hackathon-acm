@@ -17,7 +17,9 @@
     {% for ic, label, href in C.nav %}<a href="{{ href }}" class="{{ 'on' if request.path == href or (href=='/' and request.path=='/login') }}">{{ icon(ic) }} {{ label }}</a>{% endfor %}
     {% if me %}<a href="/dashboard">Dashboard</a><a href="/logout">Logout</a>{% endif %}
   </nav>
+  {% if request.path not in ('/', '/login') %}
   <a class="btn-reg" href="/register">{{ C.register_label }} {{ icon('arrow') }}</a>
+  {% endif %}
 </header>
 {% block main %}{% endblock %}
 </div>
