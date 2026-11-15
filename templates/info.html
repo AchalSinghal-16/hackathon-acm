@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% block main %}
+<main class="wrap"><h1 class="pt">{{ {'events':'Events','prizes':'Prizes & rewards','about':'About','faq':'FAQ'}[page] }}</h1>
+{% if page=='events' %}<ol class="list">{% for t,w,d in C.events %}<li><b>{{ t }}</b><span>{{ w }}</span><p>{{ d }}</p></li>{% endfor %}</ol>
+{% elif page=='prizes' %}<div class="grid">{% for t,a,d in C.prizes %}<div class="pc"><span>{{ t }}</span><b>{{ a }}</b><p>{{ d }}</p></div>{% endfor %}</div>
+{% elif page=='about' %}{% for p in C.about %}<p class="prose">{{ p }}</p>{% endfor %}
+{% else %}{% for q,a in C.faq %}<details><summary>{{ q }}</summary><p>{{ a }}</p></details>{% endfor %}{% endif %}
+<a class="btn-reg dark" href="/team-registration">Register your team {{ icon('arrow') }}</a></main>{% endblock %}

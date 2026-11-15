@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block main %}{% set mode='login' %}
+<div class="bgpanel"></div><main class="stage">
+ <section class="hero">
+  <span class="badge">{{ icon('bolt') }} {{ C.badge }}</span>
+  <h1>{{ C.h1_line1 }}<br><em class="hack">{{ C.h1_hack }}</em> <i>{{ C.h1_rest }}</i></h1>
+  <svg class="swoosh" viewBox="0 0 320 30" aria-hidden="true"><path d="M4 21 56 17" stroke="#1b1240" stroke-width="4" stroke-linecap="round"/><path d="M50 23C120 8 215 7 288 14" stroke="#6d28d9" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M304 12l12-2" stroke="#6d28d9" stroke-width="5" stroke-linecap="round"/></svg>
+  <p>{{ C.sub }}</p>
+  {% if C.features %}<div class="feat">{% for item in C.features %}{% set ic = item[0] if item is iterable and item is not string else item %}<div class="feat-card"><span class="tile">{{ icon(ic) }}</span></div>{% endfor %}</div>{% endif %}
+ </section>
+ <div class="char-wrap">
+  <picture><source media="(max-width:699px)" srcset="{{ url_for('static', filename='images/character-m.png') }}"><img class="char" src="{{ url_for('static', filename='images/character.png') }}" alt="Student leaning on the login card" width="343" height="753"></picture></div>
+ {% include '_card.html' %}
+</main>{% endblock %}
+{% block js %}<script src="{{ url_for('static', filename='js/auth.js') }}"></script>{% endblock %}

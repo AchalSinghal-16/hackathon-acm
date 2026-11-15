@@ -1,0 +1,6 @@
+{% extends 'base.html' %}{% block main %}
+<main class="wrap"><h1 class="pt">Hi, {{ me.name.split()[0] }}</h1>
+{% if team %}<div class="panel"><p class="ok">Team registered</p><h2>{{ team.name }}</h2><p>{{ team.college }}</p>
+ <ul>{% for m in members %}<li>{{ m.name }} <span>{{ m.email }}</span></li>{% endfor %}</ul>
+ <a class="btn-reg dark" href="/team-registration">Edit team</a></div>
+{% else %}<div class="panel"><p>You haven’t registered a team yet.</p><a class="btn-reg dark" href="/team-registration">Register your team {{ icon('arrow') }}</a></div>{% endif %}</main>{% endblock %}

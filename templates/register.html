@@ -1,0 +1,4 @@
+{% extends 'base.html' %}{% block main %}{% set mode='register' %}
+<div class="bgpanel"></div>
+<main class="solo">{% include '_card.html' %}</main>{% endblock %}
+{% block js %}<script src="{{ url_for('static', filename='js/auth.js') }}"></script>{% endblock %}
