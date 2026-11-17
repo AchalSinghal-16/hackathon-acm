@@ -8,58 +8,135 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    (function(){
+      var t = localStorage.getItem('admin_theme') || 'dark';
+      if (t === 'light') {
+        document.documentElement.classList.add('light-mode');
+      }
+    })();
+  </script>
   <style>
     :root{
       --primary:#7c3aed;--accent:#a855f7;--bg:#090614;--card:#120c24;--card-border:rgba(168,85,247,.25);
-      --text:#f3e8ff;--muted:#9e90bd;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--blue:#38bdf8;
+      --text:#f3e8ff;--text-heading:#ffffff;--muted:#9e90bd;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--blue:#38bdf8;
+      --nav-bg:#0e081f;--input-bg:rgba(255,255,255,.05);--input-border:rgba(168,85,247,.35);--table-head-bg:rgba(255,255,255,.04);
+      --table-border:rgba(255,255,255,.06);--card-sub:rgba(255,255,255,.025);--table-hover:rgba(255,255,255,.02);
+      --badge-bg:rgba(168,85,247,.2);--badge-border:rgba(168,85,247,.4);--badge-text:#d8b4fe;
+    }
+    body.light-mode, html.light-mode body {
+      --bg:#f8fafc;--card:#ffffff;--card-border:#e2e8f0;
+      --text:#334155;--text-heading:#0f172a;--muted:#64748b;
+      --nav-bg:#ffffff;--input-bg:#ffffff;--input-border:#cbd5e1;--table-head-bg:#f1f5f9;
+      --table-border:#e2e8f0;--card-sub:#f8fafc;--table-hover:#f8fafc;
+      --badge-bg:#ede9fe;--badge-border:#c4b5fd;--badge-text:#6d28d9;
     }
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Plus Jakarta Sans',sans-serif;background:#090614;color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s}
     
     /* TOP NAV */
-    .admin-nav{background:#0e081f;border-bottom:1.5px solid var(--card-border);position:sticky;top:0;z-index:99}
+    .admin-nav{background:var(--nav-bg);border-bottom:1.5px solid var(--card-border);position:sticky;top:0;z-index:99;transition:all .2s}
     .admin-nav-inner{max-width:1480px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-    .admin-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff}
+    .admin-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text-heading)}
     .admin-logo-badge{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;display:grid;place-items:center;font-size:18px;font-weight:900}
-    .admin-title{font-size:17px;font-weight:800;letter-spacing:-.02em}
+    .admin-title{font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--text-heading)}
     .admin-title span{color:var(--accent)}
-    .admin-role-tag{font-size:11px;background:rgba(168,85,247,.2);border:1px solid rgba(168,85,247,.4);color:#d8b4fe;padding:2px 8px;border-radius:10px;font-weight:700;margin-left:6px}
+    .admin-role-tag{font-size:11px;background:var(--badge-bg);border:1px solid var(--badge-border);color:var(--badge-text);padding:2px 8px;border-radius:10px;font-weight:700;margin-left:6px}
 
     .admin-menu{display:flex;align-items:center;gap:6px;overflow-x:auto}
     .admin-link{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:12px;font-size:13.5px;font-weight:700;color:var(--muted);text-decoration:none;transition:all .2s;white-space:nowrap}
-    .admin-link:hover{background:rgba(255,255,255,.05);color:#fff}
-    .admin-link.active{background:rgba(168,85,247,.22);color:#fff;border:1px solid rgba(168,85,247,.4)}
+    .admin-link:hover{background:rgba(168,85,247,.1);color:var(--text-heading)}
+    .admin-link.active{background:rgba(168,85,247,.22);color:var(--primary);border:1px solid rgba(168,85,247,.4)}
+    body.light-mode .admin-link.active{background:#f3e8ff;color:#6d28d9;border-color:#d8b4fe}
     .badge-count{font-size:11px;padding:1px 6px;border-radius:8px;background:var(--red);color:#fff;font-weight:800}
 
-    .admin-user-ctrl{display:flex;align-items:center;gap:12px}
-    .admin-view-site{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)}
-    .admin-view-site:hover{color:#fff;background:rgba(255,255,255,.08)}
+    .admin-user-ctrl{display:flex;align-items:center;gap:10px}
+    .admin-theme-btn{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;font-family:inherit;color:var(--muted);background:var(--input-bg);border:1px solid var(--card-border);padding:6px 12px;border-radius:10px;cursor:pointer;transition:all .2s}
+    .admin-theme-btn:hover{color:var(--text-heading);border-color:var(--accent)}
+    .admin-view-site{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);text-decoration:none;padding:6px 12px;border-radius:10px;background:var(--input-bg);border:1px solid var(--card-border);transition:all .2s}
+    .admin-view-site:hover{color:var(--text-heading);background:rgba(168,85,247,.1)}
     .btn-admin-logout{background:#ef4444;color:#fff;border:0;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
     .btn-admin-logout:hover{filter:brightness(1.15)}
+
+    /* SVG ICON RESETS */
+    svg.i, .i {
+      width: 18px !important;
+      height: 18px !important;
+      min-width: 18px !important;
+      min-height: 18px !important;
+      max-width: 18px !important;
+      max-height: 18px !important;
+      stroke: currentColor !important;
+      fill: none !important;
+      stroke-width: 2.2 !important;
+      stroke-linecap: round !important;
+      stroke-linejoin: round !important;
+      display: inline-block !important;
+      vertical-align: middle !important;
+      flex-shrink: 0 !important;
+    }
 
     /* MAIN CONTAINER */
     .admin-container{max-width:1480px;width:100%;margin:0 auto;padding:24px 20px 80px;flex:1}
     
-    /* TOASTS / FLASHES */
-    .admin-flashes{margin-bottom:20px}
-    .admin-flash{background:#1e1438;border:1.5px solid var(--accent);color:#f3e8ff;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    /* FLOATING TOASTS / FLASHES (DISCRETE & AUTO-FADING) */
+    .admin-flashes{
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+      max-width: 440px;
+    }
+    .admin-flash{
+      pointer-events: auto;
+      background: #140c26;
+      border: 1.5px solid #10b981;
+      color: #f3e8ff;
+      padding: 12px 18px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.45);
+      animation: adminToastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1), adminToastFade 0.4s ease 3.5s forwards;
+    }
+    body.light-mode .admin-flash{
+      background: #ffffff;
+      border-color: #10b981;
+      color: #0f172a;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    }
+    @keyframes adminToastIn {
+      from { opacity: 0; transform: translateY(-12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes adminToastFade {
+      to { opacity: 0; transform: translateY(-8px); pointer-events: none; visibility: hidden; }
+    }
 
     /* CARD COMPONENTS */
-    .ops-card{background:var(--card);border:1.5px solid var(--card-border);border-radius:22px;padding:26px 28px;margin-bottom:24px;box-shadow:0 12px 35px rgba(0,0,0,.4)}
-    .ops-card-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:16px;margin-bottom:20px}
-    .ops-card-title{font-size:20px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px}
+    .ops-card{background:var(--card);border:1.5px solid var(--card-border);border-radius:22px;padding:26px 28px;margin-bottom:24px;box-shadow:0 12px 35px rgba(0,0,0,.4);transition:all .2s}
+    body.light-mode .ops-card{box-shadow:0 4px 20px rgba(0,0,0,.06)}
+    .ops-card-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-bottom:1px solid var(--card-border);padding-bottom:16px;margin-bottom:20px}
+    .ops-card-title{font-size:20px;font-weight:800;color:var(--text-heading);display:flex;align-items:center;gap:10px}
     
     /* TABLES */
-    .ops-table-wrap{overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.08)}
+    .ops-table-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--card-border)}
     .ops-table{width:100%;border-collapse:collapse;text-align:left;font-size:13.5px}
-    .ops-table th{background:rgba(255,255,255,.04);color:#c4b5fd;font-weight:800;padding:12px 16px;border-bottom:1.5px solid rgba(168,85,247,.3);text-transform:uppercase;font-size:11.5px;letter-spacing:.6px}
-    .ops-table td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);color:#e2d9f3;vertical-align:middle}
-    .ops-table tr:hover td{background:rgba(255,255,255,.02)}
+    .ops-table th{background:var(--table-head-bg);color:var(--text-heading);font-weight:800;padding:12px 16px;border-bottom:1.5px solid var(--card-border);text-transform:uppercase;font-size:11.5px;letter-spacing:.6px}
+    .ops-table td{padding:14px 16px;border-bottom:1px solid var(--table-border);color:var(--text);vertical-align:middle}
+    .ops-table tr:hover td{background:var(--table-hover)}
 
     /* STATUS BADGES */
-    .badge-verified{background:rgba(16,185,129,.2);border:1px solid var(--green);color:#6ee7b7;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
-    .badge-pending{background:rgba(245,158,11,.2);border:1px solid var(--amber);color:#fcd34d;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
-    .badge-rejected{background:rgba(239,68,68,.2);border:1px solid var(--red);color:#fca5a5;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
+    .badge-verified{background:rgba(16,185,129,.18);border:1px solid var(--green);color:#10b981;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
+    .badge-pending{background:rgba(245,158,11,.18);border:1px solid var(--amber);color:#d97706;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
+    .badge-rejected{background:rgba(239,68,68,.18);border:1px solid var(--red);color:#ef4444;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700}
 
     /* BUTTONS */
     .btn-approve{background:#10b981;color:#fff;border:0;border-radius:10px;padding:6px 14px;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:4px}
@@ -68,6 +145,99 @@
     .btn-reject:hover{filter:brightness(1.15)}
     .btn-export{background:linear-gradient(90deg,#6d28d9,#9333ea);color:#fff;border:0;border-radius:12px;padding:9px 18px;font-size:13.5px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
     .btn-export:hover{filter:brightness(1.1)}
+    .btn-edit-sm{background:rgba(168,85,247,.18);border:1px solid rgba(168,85,247,.35);color:var(--primary);padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:4px}
+    .btn-edit-sm:hover{background:var(--primary);color:#fff}
+
+    /* FORM ELEMENTS */
+    .form-control{width:100%;background:var(--input-bg);border:1.5px solid var(--input-border);border-radius:12px;padding:10px 14px;color:var(--text-heading);font-size:14px;outline:0;transition:all .2s;font-family:inherit}
+    .form-control:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(168,85,247,.25)}
+    .form-label{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:.3px}
+
+    /* LIGHT MODE COMPONENT OVERRIDES */
+    body.light-mode h1,
+    body.light-mode h2,
+    body.light-mode h3,
+    body.light-mode h4 {
+      color: var(--text-heading) !important;
+    }
+    body.light-mode .team-card,
+    body.light-mode .submission-card {
+      background: var(--card) !important;
+      border-color: var(--card-border) !important;
+    }
+    body.light-mode .team-card-header {
+      background: var(--card) !important;
+    }
+    body.light-mode .team-card-header:hover {
+      background: var(--table-hover) !important;
+    }
+    body.light-mode .team-roster-body {
+      background: var(--card-sub) !important;
+      border-top-color: var(--card-border) !important;
+    }
+    body.light-mode .member-box {
+      background: #ffffff !important;
+      border-color: var(--card-border) !important;
+    }
+    body.light-mode .member-box.is-leader {
+      background: #faf5ff !important;
+      border-color: #c084fc !important;
+    }
+    body.light-mode .filter-pill {
+      background: #ffffff !important;
+      border-color: var(--card-border) !important;
+      color: var(--muted) !important;
+    }
+    body.light-mode .filter-pill:hover {
+      background: #f1f5f9 !important;
+      color: var(--text-heading) !important;
+    }
+    body.light-mode .filter-pill.active {
+      background: #ede9fe !important;
+      border-color: #a78bfa !important;
+      color: #6d28d9 !important;
+    }
+    body.light-mode .filter-badge {
+      background: #e2e8f0 !important;
+      color: #334155 !important;
+    }
+    body.light-mode .filter-pill.active .filter-badge {
+      background: #7c3aed !important;
+      color: #ffffff !important;
+    }
+    body.light-mode .receipt-modal-card {
+      background: #ffffff !important;
+      border-color: var(--card-border) !important;
+    }
+    body.light-mode .receipt-modal-img {
+      background: #f8fafc !important;
+    }
+    body.light-mode .receipt-thumb {
+      background: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+    }
+    body.light-mode .search-input {
+      background: #ffffff !important;
+      border-color: var(--input-border) !important;
+      color: var(--text-heading) !important;
+    }
+    body.light-mode .eval-form {
+      background: var(--card-sub) !important;
+      border-color: var(--card-border) !important;
+    }
+    body.light-mode .link-github {
+      background: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+      color: #1e293b !important;
+    }
+    body.light-mode .btn-approve,
+    body.light-mode .btn-reject,
+    body.light-mode .btn-export,
+    body.light-mode .btn-admin-logout,
+    body.light-mode .admin-logo-badge,
+    body.light-mode .badge-count {
+      color: #ffffff !important;
+    }
 
     @media (max-width:768px){
       .admin-nav-inner{padding:10px 14px;flex-direction:column;align-items:stretch;gap:12px}
@@ -118,6 +288,9 @@
 
       <!-- USER ACTIONS -->
       <div class="admin-user-ctrl">
+        <button type="button" id="adminThemeToggle" class="admin-theme-btn" onclick="toggleAdminTheme()" title="Toggle Light / Dark mode">
+          <span id="adminThemeIcon">☀️</span> <span id="adminThemeLabel">Light Mode</span>
+        </button>
         <a href="/" target="_blank" class="admin-view-site">
           View Public Site ↗
         </a>
@@ -132,15 +305,58 @@
   <main class="admin-container">
     {% with messages = get_flashed_messages() %}
       {% if messages %}
-      <div class="admin-flashes">
+      <div class="admin-flashes" id="adminFlashContainer">
         {% for m in messages %}
-        <div class="admin-flash">{{ icon('check') }} {{ m }}</div>
+        <div class="admin-flash">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#10b981;color:#ffffff;font-size:12px;font-weight:900;flex-shrink:0;">✓</span>
+          <span style="flex:1;">{{ m }}</span>
+          <button type="button" onclick="this.parentElement.remove()" style="background:none;border:0;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;margin-left:8px;line-height:1;" title="Dismiss">✕</button>
+        </div>
         {% endfor %}
       </div>
+      <script>
+        setTimeout(function() {
+          var c = document.getElementById('adminFlashContainer');
+          if (c) {
+            c.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            c.style.opacity = '0';
+            c.style.transform = 'translateY(-10px)';
+            setTimeout(function() { if (c) c.remove(); }, 400);
+          }
+        }, 3200);
+      </script>
       {% endif %}
     {% endwith %}
 
     {% block content %}{% endblock %}
   </main>
+
+  <script>
+    function applyAdminTheme(t) {
+      var isLight = (t === 'light');
+      if (isLight) {
+        document.body.classList.add('light-mode');
+        document.documentElement.classList.add('light-mode');
+      } else {
+        document.body.classList.remove('light-mode');
+        document.documentElement.classList.remove('light-mode');
+      }
+      var icon = document.getElementById('adminThemeIcon');
+      var label = document.getElementById('adminThemeLabel');
+      if (icon && label) {
+        icon.textContent = isLight ? '🌙' : '☀️';
+        label.textContent = isLight ? 'Dark Mode' : 'Light Mode';
+      }
+      localStorage.setItem('admin_theme', t);
+    }
+    function toggleAdminTheme() {
+      var cur = localStorage.getItem('admin_theme') || 'dark';
+      applyAdminTheme(cur === 'light' ? 'dark' : 'light');
+    }
+    (function(){
+      var cur = localStorage.getItem('admin_theme') || 'dark';
+      applyAdminTheme(cur);
+    })();
+  </script>
 </body>
 </html>

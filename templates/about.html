@@ -10,23 +10,53 @@
       Empowering Innovators. <em>Building the Future.</em>
     </h1>
     <p class="about-hero-sub">
-      {{ info.get('subheadline', "Central India's flagship 36-hour offline hackathon hosted by the ACM Student Chapter at Madhav Institute of Technology & Science (MITS), Gwalior.") }}
+      {{ info.get('subheadline', "Central India's flagship 12-hour offline hackathon on January 17, 2027 hosted by the ACM Student Chapter at Madhav Institute of Technology & Science (MITS), Gwalior.") }}
     </p>
 
     <div class="about-stats-strip">
-      <div class="stat-pill">{{ icon('clock') }} <b>{{ info.get('stat_hours', '36') }} Continuous Hours</b></div>
-      <div class="stat-pill">{{ icon('trophy') }} <b>{{ info.get('stat_prize', '₹2,50,000+') }} Prize Pool</b></div>
+      <div class="stat-pill">{{ icon('clock') }} <b>{{ info.get('stat_hours', '12') }} Continuous Hours</b></div>
+      <div class="stat-pill">{{ icon('trophy') }} <b>{{ info.get('stat_prize', '₹50,000+') }} Prize Pool</b></div>
       <div class="stat-pill">{{ icon('users') }} <b>{{ info.get('stat_teams', '100+') }} Teams Across India</b></div>
       <div class="stat-pill">{{ icon('sparkles') }} <b>{{ info.get('stat_mentors', '20+') }} Technical Mentors</b></div>
       <div class="stat-pill">{{ icon('globe') }} <b>Offline @ MITS Campus</b></div>
     </div>
   </div>
 
-  <!-- SECTION 1: MISSION & HERITAGE (2-COL SPLIT) -->
+  <!-- SECTION 1: WHAT IS ACM (FIRST SECTION) -->
   <div class="sec-head" style="margin-top:36px;">
+    <span class="sec-badge">{{ icon('globe') }} {{ info.get('acm_badge', 'The Global Computing Society') }}</span>
+    <h2 class="sec-title">{{ info.get('acm_section_title', 'What is ACM?') }}</h2>
+    <p class="sec-sub">{{ info.get('acm_sub', 'Association for Computing Machinery · Advancing Computing as a Science & Profession') }}</p>
+  </div>
+
+  <div class="story-grid">
+    <div class="story-card">
+      <div class="story-icon">{{ icon('globe') }}</div>
+      <h3 class="story-title">Association for Computing Machinery</h3>
+      <p class="story-text">{{ info.get('acm_desc_p1', '') }}</p>
+      <p class="story-text" style="margin-top:-6px;">{{ info.get('acm_desc_p2', '') }}</p>
+      <div class="story-highlight">
+        {{ icon('trophy') }} <b>Global Impact:</b> {{ info.get('acm_highlight', 'A worldwide network uniting over 100,000+ computing professionals, researchers, and student builders across 190+ countries.') }}
+      </div>
+    </div>
+
+    <div class="story-card">
+      <div class="story-icon">{{ icon('bolt') }}</div>
+      <h3 class="story-title">{{ info.get('acm_chapter_title', 'ACM Student Chapter @ MITS Gwalior') }}</h3>
+      <p class="story-text">{{ info.get('acm_chapter_desc', '') }}</p>
+      <div class="story-meta-tags" style="margin-top:auto;">
+        <span class="story-meta-pill">🏛️ {{ info.get('institute_name', 'MITS Gwalior (Est. 1957)') }}</span>
+        <span class="story-meta-pill">💻 {{ info.get('chapter_name', 'ACM Student Chapter, MITS Gwalior') }}</span>
+        <span class="story-meta-pill">⚡ Flagship CodeNite Organizer</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: THE CODENITE VISION (REST OF THE CONTENT) -->
+  <div class="sec-head" style="margin-top:60px;">
     <span class="sec-badge">{{ icon('bolt') }} The Vision</span>
     <h2 class="sec-title">Why <em>ACM CodeNite?</em></h2>
-    <p class="sec-sub">Bridging the gap between classroom theory and real-world software engineering through a high-velocity 36-hour build sprint.</p>
+    <p class="sec-sub">Bridging the gap between classroom theory and real-world software engineering through a high-velocity 12-hour build sprint.</p>
   </div>
 
   <div class="story-grid">
@@ -41,20 +71,20 @@
 
     <div class="story-card">
       <div class="story-icon">{{ icon('home') }}</div>
-      <h3 class="story-title">The Host Institution &amp; Chapter</h3>
+      <h3 class="story-title">The Host Institution &amp; Legacy</h3>
       <p class="story-text">{{ info.get('mission_p2', '') }}</p>
       <div class="story-meta-tags">
         <span class="story-meta-pill">🏛️ {{ info.get('institute_name', 'MITS Gwalior (Est. 1957)') }}</span>
-        <span class="story-meta-pill">💻 {{ info.get('chapter_name', 'ACM Student Chapter') }}</span>
+        <span class="story-meta-pill">💻 Central India Tech Hub</span>
       </div>
     </div>
   </div>
 
-  <!-- SECTION 2: CORE HACKATHON PILLARS (6 CARDS) -->
+  <!-- SECTION 3: CORE HACKATHON PILLARS -->
   <div class="sec-head" style="margin-top:60px;">
     <span class="sec-badge">{{ icon('trophy') }} Key Highlights</span>
     <h2 class="sec-title">What Defines <em>CodeNite 2027</em></h2>
-    <p class="sec-sub">From overnight mentorship to transparent live judging — every element is designed to give you an unforgettable hacking journey.</p>
+    <p class="sec-sub">From round-the-clock mentorship to transparent live judging — every element is designed to give you an unforgettable hacking journey.</p>
   </div>
 
   <div class="pillars-grid">
@@ -65,25 +95,6 @@
       </div>
       <h4 class="pillar-title">{{ p.title }}</h4>
       <p class="pillar-desc">{{ p.description }}</p>
-    </div>
-    {% endfor %}
-  </div>
-
-  <!-- SECTION 3: CAMPUS INFRASTRUCTURE & FACILITIES -->
-  <div class="sec-head" style="margin-top:60px;">
-    <span class="sec-badge">{{ icon('globe') }} Ground Setup</span>
-    <h2 class="sec-title">Campus <em>Facilities &amp; Hospitality</em></h2>
-    <p class="sec-sub">Everything you need to stay focused, comfortable, and energized throughout the 36 continuous build hours.</p>
-  </div>
-
-  <div class="facilities-grid">
-    {% for f in facilities %}
-    <div class="facility-card">
-      <div class="facility-header">
-        <div class="facility-icon-wrap">{{ icon(f.icon) }}</div>
-        <h4 class="facility-title">{{ f.title }}</h4>
-      </div>
-      <p class="facility-desc">{{ f.description }}</p>
     </div>
     {% endfor %}
   </div>
@@ -100,7 +111,7 @@
         Register Your Team (₹50) {{ icon('arrow') }}
       </a>
       <a href="/events" class="btn-cta-sub">
-        Explore 36-Hour Schedule {{ icon('arrow') }}
+        Explore 12-Hour Schedule {{ icon('arrow') }}
       </a>
     </div>
     {% else %}
@@ -150,15 +161,6 @@
 .pillar-title{font-size:18px;font-weight:800;color:#0d0a1f;margin-bottom:8px;}
 .pillar-desc{font-size:14px;color:#554a78;line-height:1.55;}
 
-/* FACILITIES GRID */
-.facilities-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;}
-.facility-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:22px;padding:24px 22px;box-shadow:0 8px 25px rgba(109,40,217,.04);transition:all .2s;}
-.facility-card:hover{border-color:var(--primary);background:#fcfaff;}
-.facility-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-.facility-icon-wrap{width:42px;height:42px;border-radius:12px;background:#ede7fd;color:var(--primary);display:grid;place-items:center;font-size:20px;flex-shrink:0;}
-.facility-title{font-size:17px;font-weight:800;color:#0d0a1f;}
-.facility-desc{font-size:13.5px;color:#5a4f7c;line-height:1.5;}
-
 /* CTA BOX */
 .about-cta-box{margin:50px 0 20px;background:linear-gradient(135deg,#f8f4ff,#eee4ff);border:2px dashed #a855f7;border-radius:28px;padding:44px 28px;text-align:center;box-shadow:0 15px 40px rgba(109,40,217,.08);}
 .btn-cta-main{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(90deg,#5b1ed6,#8c45f7);color:#fff;border-radius:30px;padding:14px 32px;font-size:17px;font-weight:800;transition:all .2s;box-shadow:0 8px 24px rgba(109,40,217,.35);}
@@ -182,9 +184,6 @@
   .pillars-grid{grid-template-columns:1fr;gap:16px;}
   .pillar-card{padding:20px 16px;border-radius:18px;}
   .pillar-title{font-size:17px;}
-  
-  .facilities-grid{grid-template-columns:1fr;gap:14px;}
-  .facility-card{padding:18px 16px;border-radius:18px;}
   
   .about-cta-box{padding:28px 16px;border-radius:20px;margin:32px 0 10px;}
   .about-cta-box h3{font-size:22px;}

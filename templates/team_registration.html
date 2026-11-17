@@ -1,4 +1,218 @@
 {% extends 'base.html' %}{% block main %}
+<style>
+  /* Leader Broadcast Banner */
+  .leader-broadcast-bar {
+    background: linear-gradient(135deg, #f7f3ff 0%, #f1e8ff 100%);
+    border: 1.5px solid #d8b4fe;
+    border-radius: 16px;
+    padding: 14px 20px;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    box-shadow: 0 4px 15px rgba(109, 40, 217, 0.05);
+  }
+  .leader-broadcast-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .leader-broadcast-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #6d28d9;
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .leader-broadcast-title {
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #1e1438;
+  }
+  .leader-broadcast-sub {
+    font-size: 12.5px;
+    color: #6b5d92;
+    margin-top: 2px;
+  }
+  .btn-broadcast-leader {
+    background: linear-gradient(90deg, #6d28d9, #9333ea);
+    color: #fff;
+    border: 0;
+    border-radius: 12px;
+    padding: 9px 18px;
+    font-size: 13.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(109, 40, 217, 0.3);
+  }
+  .btn-broadcast-leader:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(109, 40, 217, 0.4);
+  }
+
+  /* Member "Same as Leader" Banner */
+  .same-leader-bar {
+    background: #fbf9ff;
+    border: 1.5px dashed #c4b5fd;
+    border-radius: 14px;
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    transition: all 0.2s;
+  }
+  .same-leader-bar:hover, .same-leader-bar.is-active {
+    background: #f5eeff;
+    border-color: #9333ea;
+  }
+  .same-leader-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    color: #221845;
+    flex: 1;
+    min-width: 240px;
+  }
+  .same-leader-toggle input[type="checkbox"] {
+    width: 19px;
+    height: 19px;
+    accent-color: #6d28d9;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .same-leader-text strong {
+    color: #5b1ed6;
+    font-weight: 800;
+  }
+  .same-leader-sub {
+    font-size: 12px;
+    color: #72649b;
+    margin-left: 4px;
+  }
+  .btn-quick-fill {
+    background: #ede7fd;
+    border: 1px solid #c4b5fd;
+    color: #5b1ed6;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+  }
+  .btn-quick-fill:hover {
+    background: #6d28d9;
+    color: #fff;
+    border-color: #6d28d9;
+  }
+
+  /* Individual Same as Leader Button on field labels */
+  .btn-same-clg {
+    background: none;
+    border: 0;
+    color: #6d28d9;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: auto;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .btn-same-clg:hover {
+    color: #4c1d95;
+    background: rgba(109, 40, 217, 0.08);
+    text-decoration: none;
+  }
+
+  /* Toast Notification */
+  .reg-toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    background: #190f33;
+    color: #f3e8ff;
+    border: 1.5px solid #a855f7;
+    border-radius: 14px;
+    padding: 12px 20px;
+    font-size: 13.5px;
+    font-weight: 700;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.45);
+    opacity: 0;
+    transform: translateY(16px);
+    transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .reg-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reg-toast.warn {
+    background: #2e0e15;
+    border-color: #ef4444;
+    color: #fca5a5;
+  }
+
+  @media (max-width: 768px) {
+    .leader-broadcast-bar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 14px;
+    }
+    .btn-broadcast-leader {
+      justify-content: center;
+    }
+    .same-leader-bar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .same-leader-sub {
+      display: block;
+      margin-left: 0;
+      margin-top: 2px;
+    }
+    .btn-quick-fill {
+      justify-content: center;
+    }
+    .reg-toast {
+      left: 16px;
+      right: 16px;
+      bottom: 20px;
+      text-align: center;
+      justify-content: center;
+    }
+  }
+</style>
+
 <div class="reg-container">
   <div class="reg-top">
     <span class="reg-badge">{{ icon('bolt') }} ACM CodeNite 2027</span>
@@ -22,11 +236,9 @@
           <label>Preferred Project Domain / Track <span class="req">*</span></label>
           <select name="domain" required>
             <option value="" disabled selected>Select a Track</option>
-            <option value="AI / Machine Learning">AI / Machine Learning</option>
-            <option value="Web & Mobile App Development">Web &amp; Mobile App Development</option>
-            <option value="Cloud, DevOps & Cyber Security">Cloud, DevOps &amp; Cyber Security</option>
-            <option value="Web3 & Blockchain">Web3 &amp; Blockchain</option>
-            <option value="Open Innovation">Open Innovation</option>
+            {% for trk in tracks %}
+            <option value="{{ trk.title }}">{{ trk.title }}</option>
+            {% endfor %}
           </select>
         </div>
       </div>
@@ -83,15 +295,15 @@
       <div class="form-grid col-3" style="margin-top:16px;">
         <div class="fg">
           <label>Course <span class="req">*</span></label>
-          <input type="text" name="leader_course" placeholder="e.g. B.Tech / BCA / MCA" required>
+          <input type="text" name="leader_course" id="leader-course" placeholder="e.g. B.Tech / BCA / MCA" required>
         </div>
         <div class="fg">
           <label>Branch / Specialization <span class="req">*</span></label>
-          <input type="text" name="leader_branch" placeholder="e.g. CSE / IT / AI-ML" required>
+          <input type="text" name="leader_branch" id="leader-branch" placeholder="e.g. CSE / IT / AI-ML" required>
         </div>
         <div class="fg">
           <label>Course Duration <span class="req">*</span></label>
-          <select name="leader_duration" required>
+          <select name="leader_duration" id="leader-duration" required>
             <option value="4 Years" selected>4 Years</option>
             <option value="3 Years">3 Years</option>
             <option value="2 Years">2 Years</option>
@@ -103,7 +315,7 @@
       <div class="form-grid col-3" style="margin-top:16px;">
         <div class="fg">
           <label>Current Year of Study <span class="req">*</span></label>
-          <select name="leader_year" required>
+          <select name="leader_year" id="leader-year" required>
             <option value="" disabled selected>Select Year</option>
             <option value="1st Year">1st Year</option>
             <option value="2nd Year">2nd Year</option>
@@ -113,7 +325,7 @@
         </div>
         <div class="fg">
           <label>Graduating Year <span class="req">*</span></label>
-          <select name="leader_grad_year" required>
+          <select name="leader_grad_year" id="leader-grad-year" required>
             <option value="" disabled selected>Select Grad Year</option>
             <option value="2025">2025</option>
             <option value="2026">2026</option>
@@ -125,8 +337,22 @@
         </div>
         <div class="fg">
           <label>Enrollment / Roll Number <span class="req">*</span></label>
-          <input type="text" name="leader_enrollment" placeholder="e.g. 0827CS231001" required>
+          <input type="text" name="leader_enrollment" id="leader-enrollment" placeholder="e.g. 0827CS231001" required>
         </div>
+      </div>
+
+      <!-- LEADER BROADCAST TO ALL TEAMMATES -->
+      <div class="leader-broadcast-bar">
+        <div class="leader-broadcast-text">
+          <span class="leader-broadcast-icon">⚡</span>
+          <div>
+            <div class="leader-broadcast-title">Are teammates from the same college &amp; batch?</div>
+            <div class="leader-broadcast-sub">Auto-apply these academic details across all members so you don't have to fill them again and again.</div>
+          </div>
+        </div>
+        <button type="button" class="btn-broadcast-leader" onclick="broadcastLeaderToAll()">
+          {{ icon('bolt') }} Copy to All Teammates
+        </button>
       </div>
     </section>
 
@@ -151,6 +377,20 @@
           <button type="button" class="btn-remove-member" onclick="removeMember({{ m.num }})">✕ Remove Member {{ m.num }}</button>
           {% endif %}
         </div>
+      </div>
+
+      <!-- SAME AS LEADER BAR -->
+      <div class="same-leader-bar">
+        <label class="same-leader-toggle">
+          <input type="checkbox" id="same-leader-{{ m.num }}" onchange="toggleSameAsLeader({{ m.num }}, this.checked)">
+          <span class="same-leader-text">
+            <strong>Same as Leader</strong>
+            <span class="same-leader-sub">(College, Course, Branch, Duration, Year &amp; Grad Year)</span>
+          </span>
+        </label>
+        <button type="button" class="btn-quick-fill" onclick="copyAllFromLeader({{ m.num }})" title="Auto-fill academic info from Leader">
+          Auto-Fill ⤓
+        </button>
       </div>
 
       <div class="form-grid col-2">
@@ -187,23 +427,33 @@
 
       <div class="form-grid" style="margin-top:16px;">
         <div class="fg">
-          <label>Institute / College Name {% if m.req %}<span class="req">*</span>{% endif %}</label>
+          <label>
+            <span>Institute / College Name {% if m.req %}<span class="req">*</span>{% endif %}</span>
+            <button type="button" class="btn-same-clg" onclick="copyLeaderField('college', {{ m.num }})" title="Copy leader's college name">
+              Same College as Leader
+            </button>
+          </label>
           <input type="text" name="m{{ m.num }}_college" id="m{{ m.num }}-college" placeholder="Full College / University Name" {% if m.req %}required{% endif %}>
         </div>
       </div>
 
       <div class="form-grid col-3" style="margin-top:16px;">
         <div class="fg">
-          <label>Course {% if m.req %}<span class="req">*</span>{% endif %}</label>
-          <input type="text" name="m{{ m.num }}_course" placeholder="e.g. B.Tech / BCA" {% if m.req %}required{% endif %}>
+          <label>
+            <span>Course {% if m.req %}<span class="req">*</span>{% endif %}</span>
+            <button type="button" class="btn-same-clg" onclick="copyLeaderField('course_branch', {{ m.num }})" title="Copy leader's course, branch & duration">
+              Same as Leader
+            </button>
+          </label>
+          <input type="text" name="m{{ m.num }}_course" id="m{{ m.num }}-course" placeholder="e.g. B.Tech / BCA" {% if m.req %}required{% endif %}>
         </div>
         <div class="fg">
           <label>Branch / Specialization {% if m.req %}<span class="req">*</span>{% endif %}</label>
-          <input type="text" name="m{{ m.num }}_branch" placeholder="e.g. CSE / IT" {% if m.req %}required{% endif %}>
+          <input type="text" name="m{{ m.num }}_branch" id="m{{ m.num }}-branch" placeholder="e.g. CSE / IT" {% if m.req %}required{% endif %}>
         </div>
         <div class="fg">
           <label>Course Duration {% if m.req %}<span class="req">*</span>{% endif %}</label>
-          <select name="m{{ m.num }}_duration">
+          <select name="m{{ m.num }}_duration" id="m{{ m.num }}-duration">
             <option value="4 Years" selected>4 Years</option>
             <option value="3 Years">3 Years</option>
             <option value="2 Years">2 Years</option>
@@ -214,8 +464,13 @@
 
       <div class="form-grid col-3" style="margin-top:16px;">
         <div class="fg">
-          <label>Current Year {% if m.req %}<span class="req">*</span>{% endif %}</label>
-          <select name="m{{ m.num }}_year" {% if m.req %}required{% endif %}>
+          <label>
+            <span>Current Year {% if m.req %}<span class="req">*</span>{% endif %}</span>
+            <button type="button" class="btn-same-clg" onclick="copyLeaderField('year_grad', {{ m.num }})" title="Copy leader's year of study">
+              Same as Leader
+            </button>
+          </label>
+          <select name="m{{ m.num }}_year" id="m{{ m.num }}-year" {% if m.req %}required{% endif %}>
             <option value="" disabled selected>Select Year</option>
             <option value="1st Year">1st Year</option>
             <option value="2nd Year">2nd Year</option>
@@ -225,7 +480,7 @@
         </div>
         <div class="fg">
           <label>Graduating Year {% if m.req %}<span class="req">*</span>{% endif %}</label>
-          <select name="m{{ m.num }}_grad_year" {% if m.req %}required{% endif %}>
+          <select name="m{{ m.num }}_grad_year" id="m{{ m.num }}-grad-year" {% if m.req %}required{% endif %}>
             <option value="" disabled selected>Select Grad Year</option>
             <option value="2025">2025</option>
             <option value="2026">2026</option>
@@ -237,7 +492,7 @@
         </div>
         <div class="fg">
           <label>Enrollment / Roll Number {% if m.req %}<span class="req">*</span>{% endif %}</label>
-          <input type="text" name="m{{ m.num }}_enrollment" placeholder="Roll Number" {% if m.req %}required{% endif %}>
+          <input type="text" name="m{{ m.num }}_enrollment" id="m{{ m.num }}-enrollment" placeholder="Roll Number" {% if m.req %}required{% endif %}>
         </div>
       </div>
     </section>
@@ -265,7 +520,7 @@
         <ul>
           <li><b>Team Composition:</b> Teams must have a minimum of 4 members and a maximum of 6 members. Cross-college teams are permitted and members can be from different institutes.</li>
           <li><b>Student Eligibility:</b> All members must be actively enrolled undergraduate or postgraduate students with valid institutional ID cards.</li>
-          <li><b>Originality of Work:</b> All code and assets must be developed during the official 36-hour hackathon period. Pre-built projects, plagiarism, or copyright violations will lead to immediate disqualification.</li>
+          <li><b>Originality of Work:</b> All code and assets must be developed during the official 12-hour hackathon period on January 17, 2027. Pre-built projects, plagiarism, or copyright violations will lead to immediate disqualification.</li>
           <li><b>Initial Registration Fee:</b> An initial team registration fee of <b>₹50</b> is charged to register your team. Shortlisted teams selected for the final hackathon will be notified later regarding the ₹600 main event fee.</li>
           <li><b>Code of Conduct:</b> Participants must maintain professional decorum, respect mentors, organizers, and fellow hackers. Harassment of any form will not be tolerated.</li>
           <li><b>Decisions:</b> The decisions of the ACM CodeNite judging committee and organizers will be final and binding.</li>
@@ -323,12 +578,133 @@
 </div>
 
 <script>
+const ACADEMIC_FIELDS = [
+  { key: 'college', leaderId: 'leader-college', memberPrefix: 'm{num}-college' },
+  { key: 'course', leaderId: 'leader-course', memberPrefix: 'm{num}-course' },
+  { key: 'branch', leaderId: 'leader-branch', memberPrefix: 'm{num}-branch' },
+  { key: 'duration', leaderId: 'leader-duration', memberPrefix: 'm{num}-duration' },
+  { key: 'year', leaderId: 'leader-year', memberPrefix: 'm{num}-year' },
+  { key: 'grad_year', leaderId: 'leader-grad-year', memberPrefix: 'm{num}-grad-year' }
+];
+
+function showToast(msg, isWarn) {
+  let toast = document.getElementById('reg-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'reg-toast';
+    document.body.appendChild(toast);
+  }
+  toast.className = 'reg-toast' + (isWarn ? ' warn' : '');
+  toast.innerHTML = (isWarn ? '⚠️ ' : '✓ ') + msg;
+  toast.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function() {
+    toast.classList.remove('show');
+  }, 2600);
+}
+
+function copyAllFromLeader(memberNum) {
+  let anyLeaderValue = false;
+  ACADEMIC_FIELDS.forEach(function(f) {
+    const leaderEl = document.getElementById(f.leaderId);
+    if (leaderEl && leaderEl.value.trim()) anyLeaderValue = true;
+  });
+
+  if (!anyLeaderValue) {
+    showToast("Please fill in Team Leader's details first!", true);
+    const leaderCollege = document.getElementById('leader-college');
+    if (leaderCollege) leaderCollege.focus();
+    return;
+  }
+
+  ACADEMIC_FIELDS.forEach(function(f) {
+    const leaderEl = document.getElementById(f.leaderId);
+    const memberEl = document.getElementById(f.memberPrefix.replace('{num}', memberNum));
+    if (leaderEl && memberEl && leaderEl.value) {
+      memberEl.value = leaderEl.value;
+      memberEl.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
+
+  const chk = document.getElementById('same-leader-' + memberNum);
+  if (chk) chk.checked = true;
+
+  const bar = chk ? chk.closest('.same-leader-bar') : null;
+  if (bar) bar.classList.add('is-active');
+
+  showToast('Applied Leader\'s academic info to Member ' + memberNum);
+}
+
+function toggleSameAsLeader(memberNum, isChecked) {
+  const bar = document.getElementById('same-leader-' + memberNum)?.closest('.same-leader-bar');
+  if (isChecked) {
+    if (bar) bar.classList.add('is-active');
+    copyAllFromLeader(memberNum);
+  } else {
+    if (bar) bar.classList.remove('is-active');
+  }
+}
+
+function copyLeaderField(category, memberNum) {
+  let fieldsToCopy = [];
+  let labelText = '';
+  if (category === 'college') {
+    fieldsToCopy = ['college'];
+    labelText = 'College name';
+  } else if (category === 'course_branch') {
+    fieldsToCopy = ['course', 'branch', 'duration'];
+    labelText = 'Course & Branch';
+  } else if (category === 'year_grad') {
+    fieldsToCopy = ['year', 'grad_year'];
+    labelText = 'Year of study';
+  }
+
+  let copied = false;
+  fieldsToCopy.forEach(function(key) {
+    const f = ACADEMIC_FIELDS.find(function(item) { return item.key === key; });
+    if (f) {
+      const leaderEl = document.getElementById(f.leaderId);
+      const memberEl = document.getElementById(f.memberPrefix.replace('{num}', memberNum));
+      if (leaderEl && memberEl && leaderEl.value) {
+        memberEl.value = leaderEl.value;
+        memberEl.dispatchEvent(new Event('change', { bubbles: true }));
+        copied = true;
+      }
+    }
+  });
+
+  if (copied) {
+    showToast('Copied ' + labelText + ' from Leader for Member ' + memberNum);
+  } else {
+    showToast('Please fill Leader\'s ' + labelText + ' first!', true);
+  }
+}
+
+function broadcastLeaderToAll() {
+  const leaderCollege = document.getElementById('leader-college');
+  if (!leaderCollege || !leaderCollege.value.trim()) {
+    showToast("Please fill in Team Leader's college first!", true);
+    leaderCollege && leaderCollege.focus();
+    return;
+  }
+
+  let appliedCount = 0;
+  for (let num = 2; num <= 6; num++) {
+    const card = document.getElementById('member-card-' + num);
+    if (card && card.style.display !== 'none') {
+      copyAllFromLeader(num);
+      appliedCount++;
+    }
+  }
+  showToast('Leader\'s details applied to ' + appliedCount + ' teammates!');
+}
+
 function addMember(num) {
   const card = document.getElementById('member-card-' + num);
   if (card) {
     card.style.display = 'block';
-    card.querySelectorAll('input, select').forEach(el => {
-      if (!el.name.includes('duration')) el.required = true;
+    card.querySelectorAll('input, select').forEach(function(el) {
+      if (!el.name.includes('duration') && el.type !== 'checkbox') el.required = true;
     });
   }
   if (num === 5) {
@@ -344,10 +720,16 @@ function removeMember(num) {
   const card = document.getElementById('member-card-' + num);
   if (card) {
     card.style.display = 'none';
-    card.querySelectorAll('input, select').forEach(el => {
-      el.value = '';
+    card.querySelectorAll('input, select').forEach(function(el) {
+      if (el.type === 'checkbox') {
+        el.checked = false;
+      } else {
+        el.value = '';
+      }
       el.required = false;
     });
+    const bar = card.querySelector('.same-leader-bar');
+    if (bar) bar.classList.remove('is-active');
   }
   if (num === 6) {
     document.getElementById('add-member-6-box').style.display = 'block';
@@ -390,6 +772,49 @@ document.getElementById('team-reg-form').addEventListener('submit', function(e) 
     alert('Please upload your ₹50 payment screenshot to complete registration.');
     fileInput.focus();
     return;
+  }
+});
+
+// Live synchronization: when leader fields change, propagate to all members with "Same as Leader" checked
+document.addEventListener('DOMContentLoaded', function() {
+  ACADEMIC_FIELDS.forEach(function(f) {
+    const leaderEl = document.getElementById(f.leaderId);
+    if (!leaderEl) return;
+    const syncHandler = function() {
+      for (let num = 2; num <= 6; num++) {
+        const chk = document.getElementById('same-leader-' + num);
+        if (chk && chk.checked) {
+          const memberEl = document.getElementById(f.memberPrefix.replace('{num}', num));
+          if (memberEl) {
+            memberEl.value = leaderEl.value;
+          }
+        }
+      }
+    };
+    leaderEl.addEventListener('input', syncHandler);
+    leaderEl.addEventListener('change', syncHandler);
+  });
+
+  // If user modifies a member's field manually, uncheck the "Same as Leader" checkbox
+  for (let num = 2; num <= 6; num++) {
+    (function(mNum) {
+      ACADEMIC_FIELDS.forEach(function(f) {
+        const memberEl = document.getElementById(f.memberPrefix.replace('{num}', mNum));
+        if (memberEl) {
+          memberEl.addEventListener('input', function() {
+            const chk = document.getElementById('same-leader-' + mNum);
+            if (chk && chk.checked) {
+              const leaderEl = document.getElementById(f.leaderId);
+              if (leaderEl && memberEl.value !== leaderEl.value) {
+                chk.checked = false;
+                const bar = chk.closest('.same-leader-bar');
+                if (bar) bar.classList.remove('is-active');
+              }
+            }
+          });
+        }
+      });
+    })(num);
   }
 });
 </script>

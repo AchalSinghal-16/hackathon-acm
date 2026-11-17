@@ -1,199 +1,1670 @@
 {% extends 'admin_base.html' %}
-{% block title %}Site Content Editor · Live Dynamic CMS{% endblock %}
+{% block title %}Site Content Editor · Full Live CMS{% endblock %}
+
+{% macro date_time_dropdowns(prefix, def_day='17', def_month='01', def_year='2027', def_hour='09', def_minute='00', def_ampm='AM') %}
+<div class="dt-dropdown-group" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+  <select name="{{ prefix }}_day" id="{{ prefix }}_day_select" class="form-control" style="width:72px;" title="Day">
+    {% for d in range(1, 32) %}
+    {% set dv = '%02d'|format(d) %}
+    <option value="{{ dv }}" {{ 'selected' if dv == def_day else '' }}>{{ dv }}</option>
+    {% endfor %}
+  </select>
+  <select name="{{ prefix }}_month" id="{{ prefix }}_month_select" class="form-control" style="width:115px;" title="Month">
+    {% set months = [('01','01 - Jan'), ('02','02 - Feb'), ('03','03 - Mar'), ('04','04 - Apr'), ('05','05 - May'), ('06','06 - Jun'), ('07','07 - Jul'), ('08','08 - Aug'), ('09','09 - Sep'), ('10','10 - Oct'), ('11','11 - Nov'), ('12','12 - Dec')] %}
+    {% for mv, ml in months %}
+    <option value="{{ mv }}" {{ 'selected' if mv == def_month else '' }}>{{ ml }}</option>
+    {% endfor %}
+  </select>
+  <select name="{{ prefix }}_year" id="{{ prefix }}_year_select" class="form-control" style="width:85px;" title="Year">
+    {% for yv in ['2026', '2027', '2028', '2029', '2030'] %}
+    <option value="{{ yv }}" {{ 'selected' if yv == def_year else '' }}>{{ yv }}</option>
+    {% endfor %}
+  </select>
+  <span style="font-weight:700;color:var(--muted);padding:0 2px;">at</span>
+  <select name="{{ prefix }}_hour" class="form-control" style="width:72px;" title="Hour">
+    {% for h in range(1, 13) %}
+    {% set hv = '%02d'|format(h) %}
+    <option value="{{ hv }}" {{ 'selected' if hv == def_hour else '' }}>{{ hv }}</option>
+    {% endfor %}
+  </select>
+  <span style="font-weight:800;color:var(--primary);">:</span>
+  <select name="{{ prefix }}_minute" class="form-control" style="width:72px;" title="Minute">
+    {% for m in range(0, 60, 5) %}
+    {% set mv = '%02d'|format(m) %}
+    <option value="{{ mv }}" {{ 'selected' if mv == def_minute else '' }}>{{ mv }}</option>
+    {% endfor %}
+  </select>
+  <select name="{{ prefix }}_ampm" class="form-control" style="width:75px;" title="AM/PM">
+    <option value="AM" {{ 'selected' if def_ampm == 'AM' else '' }}>AM</option>
+    <option value="PM" {{ 'selected' if def_ampm == 'PM' else '' }}>PM</option>
+  </select>
+  <span style="font-size:11px;font-weight:800;color:var(--accent);background:var(--badge-bg);padding:4px 8px;border-radius:6px;">IST</span>
+</div>
+{% endmacro %}
 
 {% block extra_head %}
 <style>
+  /* SUB-PAGE TABS */
+  .cms-tabs-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1.5px solid var(--card-border);
+    padding-bottom: 12px;
+    overflow-x: auto;
+  }
+  .cms-tab-btn {
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 800;
+    font-family: inherit;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    background: var(--input-bg);
+    color: var(--muted);
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cms-tab-btn:hover {
+    color: var(--text-heading);
+    background: rgba(168,85,247,0.12);
+  }
+  .cms-tab-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 4px 15px rgba(109,40,217,0.35);
+  }
+
+  .cms-tab-pane {
+    display: none;
+  }
+  .cms-tab-pane.active {
+    display: block;
+  }
+
+  /* SECTION HEADERS */
+  .cms-sec-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-heading);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  /* COLLAPSIBLE ADD FORMS */
+  .add-item-box {
+    background: var(--card-sub);
+    border: 1.5px dashed var(--card-border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 22px;
+    transition: all 0.2s;
+  }
+  .add-item-box:hover {
+    border-color: var(--accent);
+  }
+
+  /* EDIT MODAL */
+  .cms-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 6, 24, 0.85);
+    backdrop-filter: blur(6px);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  body.light-mode .cms-modal {
+    background: rgba(15, 23, 42, 0.65);
+  }
+  .cms-modal.active {
+    display: flex;
+  }
+  .cms-modal-card {
+    max-width: 650px;
+    width: 100%;
+    background: var(--card);
+    border: 1.5px solid var(--card-border);
+    border-radius: 22px;
+    padding: 26px 28px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .cms-modal-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    color: var(--muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .cms-modal-close:hover {
+    color: #fff;
+    background: var(--red);
+  }
+
   .editor-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px;
-    margin-bottom: 24px;
-  }
-  .form-control {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1.5px solid rgba(168,85,247,0.3);
-    border-radius: 12px;
-    padding: 10px 14px;
-    color: #fff;
-    font-size: 14px;
-    outline: none;
-    transition: all 0.2s;
-    font-family: inherit;
-  }
-  .form-control:focus {
-    border-color: #c084fc;
-    box-shadow: 0 0 0 3px rgba(168,85,247,0.25);
-  }
-  .form-label {
-    display: block;
-    font-size: 12.5px;
-    font-weight: 700;
-    color: #c4b5fd;
-    margin-bottom: 6px;
-    letter-spacing: 0.3px;
-  }
-  .faq-row {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    padding: 16px 18px;
-    margin-bottom: 12px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .item-row {
+    background: var(--card-sub);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    transition: all 0.2s;
+  }
+  .item-row:hover {
+    border-color: rgba(168,85,247,0.4);
+    background: rgba(168,85,247,0.03);
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:20px;">
   <div>
-    <h1 style="font-size:26px;font-weight:800;color:#fff;">Dynamic Content Management (CMS)</h1>
+    <h1 style="font-size:26px;font-weight:800;color:var(--text-heading);">Live Content Management System (CMS)</h1>
     <p style="font-size:14px;color:var(--muted);margin-top:4px;">
-      Live content editor for ACM CodeNite 2027. Updates made here instantly reflect across the public Event, Prizes, About, and FAQ pages without server restarts.
+      100% full administrative control. Add, edit, or delete every text, schedule timeline, track, problem statement, prize, and FAQ live across the site.
     </p>
   </div>
 </div>
 
-<!-- SECTION 1: EVENT METADATA -->
-<div class="ops-card">
-  <div class="ops-card-head">
-    <h3 class="ops-card-title">📅 Event Schedule &amp; Key Details</h3>
-    <span style="font-size:12.5px;color:var(--muted);">Appears on /events and homepage banner</span>
-  </div>
-
-  <form method="post" action="/{{ slug }}/content/event-info">
-    <input type="hidden" name="csrf" value="{{ csrf() }}">
-    <div class="editor-grid">
-      <div>
-        <label class="form-label">EVENT TAGLINE</label>
-        <input type="text" name="tagline" value="{{ event_info.get('tagline', '') }}" class="form-control" required>
-      </div>
-      <div>
-        <label class="form-label">DATES &amp; DURATION</label>
-        <input type="text" name="dates" value="{{ event_info.get('dates', '') }}" class="form-control" required>
-      </div>
-      <div>
-        <label class="form-label">VENUE &amp; CAMPUS LOCATION</label>
-        <input type="text" name="venue" value="{{ event_info.get('venue', '') }}" class="form-control" required>
-      </div>
-      <div>
-        <label class="form-label">TOTAL PRIZE POOL DISPLAY</label>
-        <input type="text" name="prize_pool" value="{{ event_info.get('prize_pool', '') }}" class="form-control" required>
-      </div>
-      <div>
-        <label class="form-label">ALLOWED TEAM SIZE</label>
-        <input type="text" name="team_size" value="{{ event_info.get('team_size', '') }}" class="form-control" required>
-      </div>
-      <div>
-        <label class="form-label">EVENT MODE</label>
-        <input type="text" name="mode" value="{{ event_info.get('mode', '') }}" class="form-control" required>
-      </div>
-    </div>
-    
-    <div style="margin-bottom:18px;">
-      <label class="form-label">ABOUT HACKATHON DESCRIPTION (PARAGRAPH 1)</label>
-      <textarea name="about_p1" rows="3" class="form-control">{{ event_info.get('about_p1', '') }}</textarea>
-    </div>
-
-    <button type="submit" class="btn-approve" style="padding:10px 20px;font-size:13.5px;">
-      💾 Save Event Details
-    </button>
-  </form>
+<!-- TOP CMS NAVIGATION SUB-TABS -->
+<div class="cms-tabs-nav">
+  <button type="button" class="cms-tab-btn active" onclick="switchCmsTab('tab-events', this)">
+    📅 Events Page CMS
+  </button>
+  <button type="button" class="cms-tab-btn" onclick="switchCmsTab('tab-prizes', this)">
+    🏆 Prizes Page CMS
+  </button>
+  <button type="button" class="cms-tab-btn" onclick="switchCmsTab('tab-about', this)">
+    ℹ️ About Page CMS
+  </button>
+  <button type="button" class="cms-tab-btn" onclick="switchCmsTab('tab-faq', this)">
+    ❓ FAQ Page CMS
+  </button>
 </div>
 
-<!-- SECTION 2: PRIZE POOL & PODIUM AMOUNTS -->
-<div class="ops-card">
-  <div class="ops-card-head">
-    <h3 class="ops-card-title">🏆 Prize Pool &amp; Podium Cash Awards</h3>
-    <span style="font-size:12.5px;color:var(--muted);">Displayed dynamically on /prizes</span>
+<!-- ========================================== -->
+<!-- 1. EVENTS PAGE CMS -->
+<!-- ========================================== -->
+<div id="tab-events" class="cms-tab-pane active">
+
+  <!-- A. EVENT GENERAL METADATA -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">📌 Event Overview &amp; Hero Metadata</h3>
+      <span style="font-size:12.5px;color:var(--muted);">Displayed at the top of /events</span>
+    </div>
+    <form method="post" action="/{{ slug }}/content/event-info">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      <div class="editor-grid">
+        <div>
+          <label class="form-label">EVENT TAGLINE</label>
+          <input type="text" name="tagline" value="{{ event_info.get('tagline', '') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">DATES</label>
+          <input type="text" name="dates" value="{{ event_info.get('dates', '') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">DURATION</label>
+          <input type="text" name="duration" value="{{ event_info.get('duration', '') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">VENUE / LOCATION</label>
+          <input type="text" name="venue" value="{{ event_info.get('venue', '') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">TOTAL PRIZE POOL DISPLAY</label>
+          <input type="text" name="prize_pool" value="{{ event_info.get('prize_pool', '') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">TEAM SIZE</label>
+          <input type="text" name="team_size" value="{{ event_info.get('team_size', '') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">EVENT MODE</label>
+          <input type="text" name="mode" value="{{ event_info.get('mode', '') }}" class="form-control" required>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="form-label">ABOUT HACKATHON (PARAGRAPH 1)</label>
+        <textarea name="about_p1" rows="2" class="form-control">{{ event_info.get('about_p1', '') }}</textarea>
+      </div>
+      <div style="margin-bottom:18px;">
+        <label class="form-label">ABOUT HACKATHON (PARAGRAPH 2)</label>
+        <textarea name="about_p2" rows="2" class="form-control">{{ event_info.get('about_p2', '') }}</textarea>
+      </div>
+      <button type="submit" class="btn-approve">💾 Save Event Metadata</button>
+    </form>
   </div>
 
-  <form method="post" action="/{{ slug }}/content/prizes">
-    <input type="hidden" name="csrf" value="{{ csrf() }}">
-    <div class="editor-grid">
-      <div>
-        <label class="form-label">TOTAL PRIZE POOL HEADLINE</label>
-        <input type="text" name="total_pool" value="{{ prize_overview.get('total_pool', '₹2,50,000+') }}" class="form-control" required>
-      </div>
-      <div>
-        <label class="form-label">HARD CASH PRIZE POOL</label>
-        <input type="text" name="cash_pool" value="{{ prize_overview.get('cash_pool', '₹2,00,000') }}" class="form-control" required>
-      </div>
-      <div>
-        <label class="form-label">PERKS &amp; CREDITS POOL</label>
-        <input type="text" name="perks_val" value="{{ prize_overview.get('perks_val', '₹50,000+') }}" class="form-control" required>
-      </div>
+  <!-- B. SCHEDULE MANAGER -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">⏰ Chronological Schedule Timeline ({{ schedule|length }} Slots)</h3>
     </div>
 
-    <h4 style="font-size:15px;color:#c4b5fd;margin:16px 0 10px;font-weight:700;">Flagship Podium Cash Amounts:</h4>
-    <div class="editor-grid">
-      {% for pod in podium %}
-      <div>
-        <label class="form-label">{{ pod.title }} (Rank {{ pod.rank }})</label>
-        <input type="text" name="podium_{{ pod.id }}" value="{{ pod.amount }}" class="form-control" required>
+    <!-- ADD SCHEDULE FORM -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add New Schedule Slot</h4>
+      <form method="post" action="/{{ slug }}/content/schedule/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div class="editor-grid">
+          <div>
+            <label class="form-label">DAY / DATE TITLE</label>
+            <input type="text" name="day_title" value="January 17, 2027 · Sunday" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">TIME SLOT (e.g. 09:30 AM Sharp)</label>
+            <input type="text" name="time_slot" placeholder="e.g. 02:00 PM – 03:00 PM" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">EVENT TITLE</label>
+            <input type="text" name="title" placeholder="e.g. Mentorship Checkpoint" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">BADGE (e.g. Hacking Live, Meal, Ceremony)</label>
+            <input type="text" name="badge" placeholder="Activity / Meal / Judging" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">ORDER INDEX</label>
+            <input type="number" name="order_idx" value="{{ (schedule|length) + 1 }}" class="form-control">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">DESCRIPTION</label>
+          <input type="text" name="description" placeholder="Short description of this session..." class="form-control">
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Slot</button>
+      </form>
+    </div>
+
+    <!-- SCHEDULE ITEMS TABLE -->
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Time</th>
+            <th>Title &amp; Description</th>
+            <th>Day</th>
+            <th>Badge</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in schedule %}
+          <tr>
+            <td><b>#{{ s.order_idx }}</b></td>
+            <td><code style="color:var(--primary);font-weight:700;">{{ s.time_slot }}</code></td>
+            <td>
+              <div style="font-weight:800;color:var(--text-heading);">{{ s.title }}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">{{ s.description }}</div>
+            </td>
+            <td><span style="font-size:12px;color:var(--muted);">{{ s.day_title }}</span></td>
+            <td>
+              <span class="badge-pending" style="font-size:11px;">{{ s.badge }}</span>
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <button type="button" class="btn-edit-sm" 
+                        onclick="openEditScheduleModal({{ s.id }}, '{{ s.day_title|replace("'", "\\'") }}', '{{ s.time_slot|replace("'", "\\'") }}', '{{ s.title|replace("'", "\\'") }}', '{{ s.description|replace("'", "\\'") }}', '{{ s.badge|replace("'", "\\'") }}', {{ s.order_idx }})">
+                  Edit
+                </button>
+                <form method="post" action="/{{ slug }}/content/schedule/delete/{{ s.id }}" onsubmit="return confirm('Delete slot {{ s.title }}?');" style="margin:0;">
+                  <input type="hidden" name="csrf" value="{{ csrf() }}">
+                  <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- C. TRACKS & DOMAINS MANAGER -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">🎯 Innovation Tracks &amp; Domains ({{ tracks|length }} Tracks)</h3>
+    </div>
+
+    <!-- ADD TRACK FORM -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add New Track</h4>
+      <form method="post" action="/{{ slug }}/content/tracks/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div class="editor-grid">
+          <div>
+            <label class="form-label">TRACK TITLE</label>
+            <input type="text" name="title" placeholder="e.g. AI & Machine Learning" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">TAGLINE</label>
+            <input type="text" name="tagline" placeholder="e.g. Autonomous systems & computer vision" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">ICON (cpu / lock / globe / shield / bulb / sparkles)</label>
+            <input type="text" name="icon" value="bulb" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">COLOR ACCENT (HEX)</label>
+            <input type="text" name="color_accent" value="#8b5cf6" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">ORDER INDEX</label>
+            <input type="number" name="order_idx" value="{{ (tracks|length) + 1 }}" class="form-control">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">FULL DESCRIPTION</label>
+          <textarea name="description" rows="2" class="form-control" placeholder="What kind of solutions are expected in this domain..."></textarea>
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Track</button>
+      </form>
+    </div>
+
+    <!-- EXISTING TRACKS -->
+    <div>
+      {% for trk in tracks %}
+      <div class="item-row">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:{{ trk.color_accent }};"></span>
+            <b style="font-size:15px;color:var(--text-heading);">{{ trk.title }}</b>
+            <span style="font-size:12px;color:var(--muted);">{{ trk.tagline }}</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);margin-top:4px;">{{ trk.description }}</p>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-edit-sm" 
+                  onclick="openEditTrackModal({{ trk.id }}, '{{ trk.title|replace("'", "\\'") }}', '{{ trk.tagline|replace("'", "\\'") }}', '{{ trk.description|replace("'", "\\'") }}', '{{ trk.icon }}', '{{ trk.color_accent }}', {{ trk.order_idx }})">
+            Edit
+          </button>
+          <form method="post" action="/{{ slug }}/content/tracks/delete/{{ trk.id }}" onsubmit="return confirm('Delete track {{ trk.title }}?');" style="margin:0;">
+            <input type="hidden" name="csrf" value="{{ csrf() }}">
+            <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+          </form>
+        </div>
       </div>
       {% endfor %}
     </div>
-
-    <button type="submit" class="btn-approve" style="padding:10px 20px;font-size:13.5px;margin-top:10px;">
-      💾 Save Prize Amounts
-    </button>
-  </form>
-</div>
-
-<!-- SECTION 3: FAQ MANAGEMENT -->
-<div class="ops-card">
-  <div class="ops-card-head">
-    <h3 class="ops-card-title">❓ FAQ Items Management</h3>
-    <span style="font-size:12.5px;color:var(--muted);">Add or remove frequently asked questions</span>
   </div>
 
-  <!-- ADD FAQ FORM -->
-  <form method="post" action="/{{ slug }}/content/faq/add" style="background:rgba(255,255,255,0.025);border:1px dashed rgba(168,85,247,0.4);border-radius:14px;padding:18px;margin-bottom:20px;">
-    <input type="hidden" name="csrf" value="{{ csrf() }}">
-    <h4 style="font-size:14px;font-weight:800;color:#c084fc;margin-bottom:12px;">+ Add New Question</h4>
-    <div style="display:grid;grid-template-columns:1fr 200px;gap:12px;margin-bottom:10px;">
-      <input type="text" name="question" placeholder="Question text..." class="form-control" required>
-      <select name="category_slug" class="form-control">
-        <option value="general">General</option>
-        <option value="registration">Registration</option>
-        <option value="logistics">Logistics &amp; Stay</option>
-        <option value="technical">Technical &amp; Rules</option>
-      </select>
+  <!-- D. PROBLEM STATEMENTS MANAGER -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">💡 Problem Statements ({{ problems|length }} Statements)</h3>
     </div>
-    <textarea name="answer" placeholder="Detailed helpful answer..." rows="2" class="form-control" style="margin-bottom:12px;" required></textarea>
-    <button type="submit" class="btn-export" style="font-size:13px;padding:8px 16px;">
-      + Add FAQ Item
-    </button>
-  </form>
 
-  <!-- EXISTING FAQ LIST -->
-  <div>
-    {% for f in faqs %}
-    <div class="faq-row">
-      <div style="flex:1;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:11px;background:rgba(168,85,247,0.2);color:#d8b4fe;padding:2px 8px;border-radius:6px;font-weight:700;">
-            {{ f.category_slug.upper() }}
-          </span>
-          <b style="color:#fff;font-size:14.5px;">{{ f.question }}</b>
+    <!-- ADD PROBLEM FORM -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add New Problem Statement</h4>
+      <form method="post" action="/{{ slug }}/content/problems/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div class="editor-grid">
+          <div>
+            <label class="form-label">ASSOCIATED TRACK</label>
+            <select name="track_id" class="form-control">
+              {% for trk in tracks %}
+              <option value="{{ trk.id }}">{{ trk.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="form-label">PROBLEM CODE (e.g. PS-AI-01)</label>
+            <input type="text" name="code" placeholder="e.g. PS-AI-01" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">TITLE</label>
+            <input type="text" name="title" placeholder="Problem title..." class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">BRIEF / PDF URL</label>
+            <input type="text" name="pdf_url" value="#" class="form-control">
+          </div>
         </div>
-        <p style="font-size:13px;color:var(--muted);margin-top:6px;line-height:1.45;">
-          {{ f.answer }}
+        <div style="margin-bottom:14px;">
+          <label class="form-label">DETAILED PROBLEM DESCRIPTION</label>
+          <textarea name="description" rows="2" class="form-control" placeholder="Detailed technical requirement..."></textarea>
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Problem Statement</button>
+      </form>
+    </div>
+
+    <!-- EXISTING PROBLEM STATEMENTS -->
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Track</th>
+            <th>Problem Statement</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in problems %}
+          <tr>
+            <td><code style="color:var(--primary);font-weight:800;">{{ p.code }}</code></td>
+            <td><span style="font-size:12px;color:var(--muted);">{{ p.track_title or 'General' }}</span></td>
+            <td>
+              <div style="font-weight:800;color:var(--text-heading);">{{ p.title }}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:2px;">{{ p.description }}</div>
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <button type="button" class="btn-edit-sm" 
+                        onclick="openEditProblemModal({{ p.id }}, {{ p.track_id }}, '{{ p.code|replace("'", "\\'") }}', '{{ p.title|replace("'", "\\'") }}', '{{ p.description|replace("'", "\\'") }}', '{{ p.pdf_url }}')">
+                  Edit
+                </button>
+                <form method="post" action="/{{ slug }}/content/problems/delete/{{ p.id }}" onsubmit="return confirm('Delete problem {{ p.code }}?');" style="margin:0;">
+                  <input type="hidden" name="csrf" value="{{ csrf() }}">
+                  <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- E. RULES & GUIDELINES -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">📜 Rules &amp; Guidelines ({{ rules|length }} Rules)</h3>
+    </div>
+    
+    <!-- ADD RULE FORM -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add New Rule</h4>
+      <form method="post" action="/{{ slug }}/content/rules/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div class="editor-grid">
+          <div>
+            <label class="form-label">CATEGORY</label>
+            <input type="text" name="category" placeholder="e.g. Code Authenticity / Eligibility" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">ORDER INDEX</label>
+            <input type="number" name="order_idx" value="{{ (rules|length) + 1 }}" class="form-control">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">RULE TEXT</label>
+          <textarea name="rule_text" rows="2" class="form-control" placeholder="Complete guideline text..." required></textarea>
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Rule</button>
+      </form>
+    </div>
+
+    <!-- EXISTING RULES -->
+    <div>
+      {% for r in rules %}
+      <div class="item-row">
+        <div style="flex:1;">
+          <b style="color:var(--text-heading);font-size:14px;">{{ r.category }}</b>
+          <p style="font-size:13px;color:var(--muted);margin-top:4px;">{{ r.rule_text }}</p>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-edit-sm" 
+                  onclick="openEditRuleModal({{ r.id }}, '{{ r.category|replace("'", "\\'") }}', '{{ r.rule_text|replace("'", "\\'") }}', {{ r.order_idx }})">
+            Edit
+          </button>
+          <form method="post" action="/{{ slug }}/content/rules/delete/{{ r.id }}" onsubmit="return confirm('Delete this rule?');" style="margin:0;">
+            <input type="hidden" name="csrf" value="{{ csrf() }}">
+            <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- F. JUDGING CRITERIA -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">⚖️ Judging Criteria &amp; Weightages</h3>
+    </div>
+
+    <!-- ADD JUDGING CRITERION FORM -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add Judging Criterion</h4>
+      <form method="post" action="/{{ slug }}/content/judging/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div class="editor-grid">
+          <div>
+            <label class="form-label">CRITERION NAME</label>
+            <input type="text" name="criterion" placeholder="e.g. Technical Complexity" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">WEIGHTAGE PERCENTAGE (e.g. 25%)</label>
+            <input type="text" name="weightage" placeholder="e.g. 25%" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">ORDER INDEX</label>
+            <input type="number" name="order_idx" value="{{ (judging|length) + 1 }}" class="form-control">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">EVALUATION FOCUS / DESCRIPTION</label>
+          <input type="text" name="description" placeholder="What the jury evaluates..." class="form-control">
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Criterion</button>
+      </form>
+    </div>
+
+    <div>
+      {% for j in judging %}
+      <div class="item-row">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <b style="color:var(--text-heading);font-size:14.5px;">{{ j.criterion }}</b>
+            <span class="badge-verified" style="font-size:12px;">{{ j.weightage }}</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);margin-top:4px;">{{ j.description }}</p>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-edit-sm" 
+                  onclick="openEditJudgingModal({{ j.id }}, '{{ j.criterion|replace("'", "\\'") }}', '{{ j.weightage|replace("'", "\\'") }}', '{{ j.description|replace("'", "\\'") }}', {{ j.order_idx }})">
+            Edit
+          </button>
+          <form method="post" action="/{{ slug }}/content/judging/delete/{{ j.id }}" onsubmit="return confirm('Delete criterion {{ j.criterion }}?');" style="margin:0;">
+            <input type="hidden" name="csrf" value="{{ csrf() }}">
+            <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- G. MILESTONE SUBMISSION ROUNDS -->
+  <div class="ops-card">
+    <div class="ops-card-head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h3 class="ops-card-title">🚀 Team Milestone Submission Rounds</h3>
+        <p style="font-size:13px;color:var(--muted);margin-top:2px;">
+          Define milestone submission checkpoints. Each round strictly enforces start and deadline times in <b>Indian Standard Time (IST)</b> evaluated server-side.
         </p>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:12px;background:var(--badge-bg);color:var(--badge-text);border:1px solid var(--badge-border);padding:5px 12px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+          {{ icon('clock') }} Server IST: {{ server_ist }}
+        </span>
+        <button type="button" class="btn-approve" onclick="toggleAddMilestoneForm()">
+          + Add Milestone Round
+        </button>
+      </div>
+    </div>
 
-      <form method="post" action="/{{ slug }}/content/faq/delete/{{ f.id }}" onsubmit="return confirm('Delete this FAQ item?');">
+    <!-- COLLAPSIBLE ADD MILESTONE FORM -->
+    <div id="addMilestoneBox" style="display:none;background:var(--card-sub);border:1.5px dashed var(--accent);border-radius:18px;padding:24px;margin-bottom:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h4 style="font-size:16px;font-weight:800;color:var(--text-heading);">➕ Create New Milestone Round</h4>
+        <button type="button" onclick="toggleAddMilestoneForm()" style="background:none;border:0;color:var(--muted);cursor:pointer;font-weight:700;">✕ Cancel</button>
+      </div>
+      <form method="post" action="/{{ slug }}/content/rounds/add">
         <input type="hidden" name="csrf" value="{{ csrf() }}">
-        <button type="submit" class="btn-reject" style="padding:4px 10px;font-size:11.5px;">
-          Delete
+        <div class="editor-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:16px;">
+          <div>
+            <label class="form-label">MILESTONE TITLE <span style="color:var(--red)">*</span></label>
+            <input type="text" name="title" placeholder="e.g. Round 4: Live Pitch & Code Defense" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">STAGE NAME <span style="color:var(--red)">*</span></label>
+            <input type="text" name="stage_name" placeholder="e.g. Stage 4 · Final Presentation" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">ROUND NUMBER</label>
+            <input type="number" name="round_num" placeholder="{{ (rounds|length) + 1 }}" min="1" class="form-control">
+            <small style="font-size:11px;color:var(--muted);">Leave blank to auto-increment</small>
+          </div>
+          <div>
+            <label class="form-label">DELIVERABLE SUBMISSION TYPE</label>
+            <select name="submission_type" class="form-control">
+              <option value="deck">Pitch Deck / Presentation (PPT / PDF Upload + Drive Link)</option>
+              <option value="progress">Mid-Hack Progress (Public GitHub Repository)</option>
+              <option value="final">Final Delivery (Live Deployed URL + Demo Video + GitHub)</option>
+              <option value="custom">General / Custom (Project Abstract + Deliverable Link + Optional File)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label class="form-label">INSTRUCTIONS / DESCRIPTION</label>
+          <textarea name="description" rows="2" class="form-control" placeholder="Specify deliverables, formats, file size limits, and expectations for mentors and teams..."></textarea>
+        </div>
+
+        <!-- QUICK PRESET DROPDOWN -->
+        <div style="background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;color:var(--muted);">⚡ Quick Set Hackathon Date:</span>
+          <select class="form-control" style="width:auto;" onchange="applyQuickDateToAdd(this.value)">
+            <option value="">-- Choose Quick Preset Date --</option>
+            <option value="2027-01-17">January 17, 2027 (CodeNite Hackathon Day)</option>
+            <option value="2027-01-16">January 16, 2027 (Check-in & Registration Day)</option>
+            <option value="2027-01-18">January 18, 2027 (Post-Hackathon Day)</option>
+            <option value="{{ now_parts.year }}-{{ now_parts.month }}-{{ now_parts.day }}">Today ({{ now_parts.day }}/{{ now_parts.month }}/{{ now_parts.year }} - Live Test)</option>
+          </select>
+          <small style="font-size:11.5px;color:var(--muted);">(Sets both start and end date dropdowns)</small>
+        </div>
+
+        <div class="editor-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-bottom:20px;">
+          <div style="background:var(--input-bg);border:1px solid var(--card-border);border-radius:14px;padding:14px 16px;">
+            <label class="form-label" style="color:var(--green);display:flex;align-items:center;gap:6px;">
+              🟢 SUBMISSION WINDOW OPENS AT (IST - Dropdowns)
+            </label>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Submissions before this moment will be locked and rejected.</div>
+            {{ date_time_dropdowns('start', def_day='17', def_month='01', def_year='2027', def_hour='09', def_minute='30', def_ampm='AM') }}
+          </div>
+
+          <div style="background:var(--input-bg);border:1px solid var(--card-border);border-radius:14px;padding:14px 16px;">
+            <label class="form-label" style="color:var(--red);display:flex;align-items:center;gap:6px;">
+              🔒 DEADLINE / WINDOW CLOSES AT (IST - Dropdowns)
+            </label>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Submissions after this moment will be closed and rejected.</div>
+            {{ date_time_dropdowns('end', def_day='17', def_month='01', def_year='2027', def_hour='11', def_minute='30', def_ampm='AM') }}
+          </div>
+        </div>
+
+        <button type="submit" class="btn-approve" style="padding:10px 24px;">
+          🚀 Add Milestone Round
         </button>
       </form>
     </div>
-    {% endfor %}
+
+    <!-- MILESTONE ROUNDS LIST -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      {% for rnd in rounds %}
+      <div style="background:var(--card-sub);border:1.5px solid var(--card-border);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+              <span style="font-size:11px;font-weight:800;color:var(--accent);background:var(--badge-bg);padding:3px 10px;border-radius:12px;border:1px solid var(--badge-border);text-transform:uppercase;">
+                Round {{ rnd.round_num }}
+              </span>
+              <span style="font-size:11px;font-weight:700;color:var(--muted);background:var(--input-bg);padding:3px 10px;border-radius:12px;border:1px solid var(--card-border);">
+                {{ rnd.stage_name }}
+              </span>
+              <span style="font-size:11px;font-weight:700;color:var(--blue);background:rgba(56,189,248,0.12);padding:3px 10px;border-radius:12px;border:1px solid rgba(56,189,248,0.3);">
+                Type: {{ rnd.submission_type|upper }}
+              </span>
+            </div>
+            <h4 style="font-size:17px;font-weight:800;color:var(--text-heading);margin:2px 0;">{{ rnd.title }}</h4>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            {% if rnd.timing.is_open %}
+            <span style="font-size:12px;font-weight:800;color:#16a34a;background:#dcfce7;border:1px solid #86efac;padding:4px 12px;border-radius:20px;">
+              🟢 Active Window (Open Now)
+            </span>
+            {% elif rnd.timing.is_upcoming %}
+            <span style="font-size:12px;font-weight:800;color:#d97706;background:#fef3c7;border:1px solid #fde68a;padding:4px 12px;border-radius:20px;">
+              ⏳ Upcoming (Locked)
+            </span>
+            {% else %}
+            <span style="font-size:12px;font-weight:800;color:#dc2626;background:#fee2e2;border:1px solid #fca5a5;padding:4px 12px;border-radius:20px;">
+              🔒 Closed (Deadline Passed)
+            </span>
+            {% endif %}
+
+            <button type="button" class="btn-edit"
+              data-id="{{ rnd.id }}"
+              data-round-num="{{ rnd.round_num }}"
+              data-title="{{ rnd.title }}"
+              data-stage="{{ rnd.stage_name }}"
+              data-type="{{ rnd.submission_type }}"
+              data-desc="{{ rnd.description }}"
+              data-syear="{{ rnd.start_parts.year }}"
+              data-smonth="{{ rnd.start_parts.month }}"
+              data-sday="{{ rnd.start_parts.day }}"
+              data-shour="{{ rnd.start_parts.hour }}"
+              data-sminute="{{ rnd.start_parts.minute }}"
+              data-sampm="{{ rnd.start_parts.ampm }}"
+              data-eyear="{{ rnd.end_parts.year }}"
+              data-emonth="{{ rnd.end_parts.month }}"
+              data-eday="{{ rnd.end_parts.day }}"
+              data-ehour="{{ rnd.end_parts.hour }}"
+              data-eminute="{{ rnd.end_parts.minute }}"
+              data-eampm="{{ rnd.end_parts.ampm }}"
+              onclick="openEditRoundModalFromBtn(this)">
+              ✏️ Edit
+            </button>
+
+            <form method="post" action="/{{ slug }}/content/rounds/delete/{{ rnd.id }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this milestone? Any associated submissions will also be removed.')">
+              <input type="hidden" name="csrf" value="{{ csrf() }}">
+              <button type="submit" class="btn-delete">🗑️ Delete</button>
+            </form>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;padding:12px 16px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;">Opens At (IST)</div>
+            <div style="font-size:13.5px;font-weight:700;color:var(--text-heading);margin-top:2px;">
+              {{ rnd.timing.start_formatted or rnd.start_time or 'Immediate' }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;">Deadline / Closes At (IST)</div>
+            <div style="font-size:13.5px;font-weight:700;color:var(--text-heading);margin-top:2px;">
+              {{ rnd.timing.end_formatted or rnd.end_time or rnd.deadline }}
+            </div>
+          </div>
+        </div>
+
+        {% if rnd.description %}
+        <p style="font-size:13.5px;color:var(--muted);line-height:1.5;margin:0;">
+          {{ rnd.description }}
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- 2. PRIZES PAGE CMS -->
+<!-- ========================================== -->
+<div id="tab-prizes" class="cms-tab-pane">
+
+  <!-- A. PRIZE OVERVIEW BANNER -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">🏆 Prize Pool Overview Figures</h3>
+    </div>
+    <form method="post" action="/{{ slug }}/content/prizes/overview">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      <div class="editor-grid">
+        <div>
+          <label class="form-label">TOTAL PRIZE POOL HEADLINE</label>
+          <input type="text" name="total_pool" value="{{ prize_overview.get('total_pool', '₹50,000+') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">HARD CASH PRIZE POOL</label>
+          <input type="text" name="cash_pool" value="{{ prize_overview.get('cash_pool', '₹50,000') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">PERKS &amp; CREDITS POOL</label>
+          <input type="text" name="perks_val" value="{{ prize_overview.get('perks_val', 'Exciting Goodies & Perks') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">HEADLINE</label>
+          <input type="text" name="headline" value="{{ prize_overview.get('headline', '') }}" class="form-control">
+        </div>
+      </div>
+      <div style="margin-bottom:18px;">
+        <label class="form-label">SUB-HEADLINE / DESCRIPTION</label>
+        <textarea name="sub" rows="2" class="form-control">{{ prize_overview.get('sub', '') }}</textarea>
+      </div>
+      <button type="submit" class="btn-approve">💾 Save Prize Overview</button>
+    </form>
+  </div>
+
+  <!-- B. PODIUM AWARDS -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">🥇 Flagship Podium Cash Awards (Top 3)</h3>
+    </div>
+    <div class="editor-grid">
+      {% for pod in podium %}
+      <div style="background:var(--card-sub);border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
+        <form method="post" action="/{{ slug }}/content/podium/edit/{{ pod.id }}">
+          <input type="hidden" name="csrf" value="{{ csrf() }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <b style="font-size:16px;color:var(--text-heading);">Rank #{{ pod.rank }}</b>
+            <span class="badge-verified">{{ pod.badge }}</span>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label class="form-label">TIER TITLE</label>
+            <input type="text" name="title" value="{{ pod.title }}" class="form-control" required>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label class="form-label">CASH AMOUNT</label>
+            <input type="text" name="amount" value="{{ pod.amount }}" class="form-control" required>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label class="form-label">BADGE (e.g. 🥇 1st Place)</label>
+            <input type="text" name="badge" value="{{ pod.badge }}" class="form-control" required>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label class="form-label">TROPHY TITLE</label>
+            <input type="text" name="trophy" value="{{ pod.trophy }}" class="form-control">
+          </div>
+          <div style="margin-bottom:14px;">
+            <label class="form-label">PERKS LIST (ONE PER LINE)</label>
+            <textarea name="perks" rows="4" class="form-control">{{ pod.perks }}</textarea>
+          </div>
+          <button type="submit" class="btn-approve" style="width:100%;justify-content:center;">Save Rank {{ pod.rank }}</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- C. PARTICIPANT PERKS & SWAG -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">🎁 Participant Perks &amp; Swag ({{ prize_perks|length }} Perks)</h3>
+    </div>
+
+    <!-- ADD PERK -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add Participant Perk</h4>
+      <form method="post" action="/{{ slug }}/content/prize-perks/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div class="editor-grid">
+          <div>
+            <label class="form-label">TITLE</label>
+            <input type="text" name="title" placeholder="e.g. Free Cloud Credits" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">ICON (trophy / globe / bolt / users / check / doc)</label>
+            <input type="text" name="icon" value="trophy" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">ORDER INDEX</label>
+            <input type="number" name="order_idx" value="{{ (prize_perks|length) + 1 }}" class="form-control">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">DESCRIPTION</label>
+          <input type="text" name="description" placeholder="Details of this perk..." class="form-control">
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Perk</button>
+      </form>
+    </div>
+
+    <div>
+      {% for prk in prize_perks %}
+      <div class="item-row">
+        <div style="flex:1;">
+          <b style="color:var(--text-heading);font-size:14px;">{{ prk.title }}</b>
+          <p style="font-size:12.5px;color:var(--muted);margin-top:2px;">{{ prk.description }}</p>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-edit-sm" 
+                  onclick="openEditPerkModal({{ prk.id }}, '{{ prk.title|replace("'", "\\'") }}', '{{ prk.description|replace("'", "\\'") }}', '{{ prk.icon }}', {{ prk.order_idx }})">
+            Edit
+          </button>
+          <form method="post" action="/{{ slug }}/content/prize-perks/delete/{{ prk.id }}" onsubmit="return confirm('Delete perk {{ prk.title }}?');" style="margin:0;">
+            <input type="hidden" name="csrf" value="{{ csrf() }}">
+            <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- D. PRIZE RULES -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">⚖️ Prize Disbursement Terms &amp; Conditions</h3>
+    </div>
+
+    <!-- ADD PRIZE RULE -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add Prize Rule</h4>
+      <form method="post" action="/{{ slug }}/content/prize-rules/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div style="margin-bottom:14px;">
+          <label class="form-label">RULE / TERM TEXT</label>
+          <textarea name="rule_text" rows="2" class="form-control" placeholder="Disbursement guidelines..." required></textarea>
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Disbursement Rule</button>
+      </form>
+    </div>
+
+    <div>
+      {% for pr in prize_rules %}
+      <div class="item-row">
+        <div style="flex:1;font-size:13px;color:var(--text);">
+          {{ pr.rule_text }}
+        </div>
+        <form method="post" action="/{{ slug }}/content/prize-rules/delete/{{ pr.id }}" onsubmit="return confirm('Delete rule?');" style="margin:0;">
+          <input type="hidden" name="csrf" value="{{ csrf() }}">
+          <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- 3. ABOUT PAGE CMS -->
+<!-- ========================================== -->
+<div id="tab-about" class="cms-tab-pane">
+
+  <!-- A. WHAT IS ACM & CHAPTER OVERVIEW (FIRST SECTION) -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">🏛️ 1. What is ACM &amp; Student Chapter Overview (First Section on About Page)</h3>
+    </div>
+    <form method="post" action="/{{ slug }}/content/about/info">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      <div class="editor-grid">
+        <div>
+          <label class="form-label">SECTION HEADING</label>
+          <input type="text" name="acm_section_title" value="{{ about_info.get('acm_section_title', 'What is ACM?') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">SECTION BADGE</label>
+          <input type="text" name="acm_badge" value="{{ about_info.get('acm_badge', 'The Global Computing Society') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">SUBTITLE / TAGLINE</label>
+          <input type="text" name="acm_sub" value="{{ about_info.get('acm_sub', 'Association for Computing Machinery · Advancing Computing as a Science & Profession') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">CHAPTER TITLE</label>
+          <input type="text" name="acm_chapter_title" value="{{ about_info.get('acm_chapter_title', 'ACM Student Chapter @ MITS Gwalior') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">HOST INSTITUTE NAME</label>
+          <input type="text" name="institute_name" value="{{ about_info.get('institute_name', 'Madhav Institute of Technology & Science (MITS), Gwalior') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">STUDENT CHAPTER NAME</label>
+          <input type="text" name="chapter_name" value="{{ about_info.get('chapter_name', 'ACM Student Chapter, MITS Gwalior') }}" class="form-control" required>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label class="form-label">GLOBAL ACM OVERVIEW (PARAGRAPH 1)</label>
+        <textarea name="acm_desc_p1" rows="3" class="form-control">{{ about_info.get('acm_desc_p1', '') }}</textarea>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label class="form-label">ACM DIGITAL LIBRARY &amp; TURING AWARD (PARAGRAPH 2)</label>
+        <textarea name="acm_desc_p2" rows="3" class="form-control">{{ about_info.get('acm_desc_p2', '') }}</textarea>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label class="form-label">GLOBAL IMPACT HIGHLIGHT</label>
+        <textarea name="acm_highlight" rows="2" class="form-control">{{ about_info.get('acm_highlight', '') }}</textarea>
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label class="form-label">MITS CHAPTER DESCRIPTION &amp; COMMUNITY WORK</label>
+        <textarea name="acm_chapter_desc" rows="3" class="form-control">{{ about_info.get('acm_chapter_desc', '') }}</textarea>
+      </div>
+
+      <button type="submit" class="btn-approve">💾 Save ACM Section Data</button>
+    </form>
+  </div>
+
+  <!-- B. CODENITE HACKATHON OVERVIEW & STATISTICS (REST OF CONTENT) -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">ℹ️ 2. CodeNite Hackathon Overview &amp; Key Statistics</h3>
+    </div>
+    <form method="post" action="/{{ slug }}/content/about/info">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      <div class="editor-grid">
+        <div>
+          <label class="form-label">HEADLINE</label>
+          <input type="text" name="headline" value="{{ about_info.get('headline', '') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">STAT: CONTINUOUS HOURS</label>
+          <input type="text" name="stat_hours" value="{{ about_info.get('stat_hours', '12') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">STAT: PRIZE POOL DISPLAY</label>
+          <input type="text" name="stat_prize" value="{{ about_info.get('stat_prize', '₹50,000+') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">STAT: TEAMS DISPLAY</label>
+          <input type="text" name="stat_teams" value="{{ about_info.get('stat_teams', '100+') }}" class="form-control" required>
+        </div>
+        <div>
+          <label class="form-label">STAT: MENTORS DISPLAY</label>
+          <input type="text" name="stat_mentors" value="{{ about_info.get('stat_mentors', '20+') }}" class="form-control" required>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label class="form-label">SUB-HEADLINE</label>
+        <textarea name="subheadline" rows="2" class="form-control">{{ about_info.get('subheadline', '') }}</textarea>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label class="form-label">MISSION PARAGRAPH 1 (OUR MISSION &amp; PHILOSOPHY)</label>
+        <textarea name="mission_p1" rows="2" class="form-control">{{ about_info.get('mission_p1', '') }}</textarea>
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label class="form-label">MISSION PARAGRAPH 2 (THE HOST INSTITUTION &amp; LEGACY)</label>
+        <textarea name="mission_p2" rows="2" class="form-control">{{ about_info.get('mission_p2', '') }}</textarea>
+      </div>
+
+      <button type="submit" class="btn-approve">💾 Save CodeNite Metadata</button>
+    </form>
+  </div>
+
+  <!-- C. CORE VISION PILLARS -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">🌟 3. Core Hackathon Vision Pillars ({{ about_pillars|length }} Pillars)</h3>
+    </div>
+
+    <!-- ADD PILLAR -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add Vision Pillar</h4>
+      <form method="post" action="/{{ slug }}/content/pillars/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div class="editor-grid">
+          <div>
+            <label class="form-label">TITLE</label>
+            <input type="text" name="title" placeholder="e.g. 12 Hours of Pure Innovation" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">ICON (bolt / users / trophy / globe / check / sparkles)</label>
+            <input type="text" name="icon" value="bolt" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">ORDER INDEX</label>
+            <input type="number" name="order_idx" value="{{ (about_pillars|length) + 1 }}" class="form-control">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">DESCRIPTION</label>
+          <textarea name="description" rows="2" class="form-control" placeholder="Pillar explanation..."></textarea>
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Pillar</button>
+      </form>
+    </div>
+
+    <div>
+      {% for pil in about_pillars %}
+      <div class="item-row">
+        <div style="flex:1;">
+          <b style="color:var(--text-heading);font-size:14.5px;">{{ pil.title }}</b>
+          <p style="font-size:12.5px;color:var(--muted);margin-top:2px;">{{ pil.description }}</p>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-edit-sm" 
+                  onclick="openEditPillarModal({{ pil.id }}, '{{ pil.title|replace("'", "\\'") }}', '{{ pil.description|replace("'", "\\'") }}', '{{ pil.icon }}', {{ pil.order_idx }})">
+            Edit
+          </button>
+          <form method="post" action="/{{ slug }}/content/pillars/delete/{{ pil.id }}" onsubmit="return confirm('Delete pillar {{ pil.title }}?');" style="margin:0;">
+            <input type="hidden" name="csrf" value="{{ csrf() }}">
+            <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- 4. FAQ PAGE CMS -->
+<!-- ========================================== -->
+<div id="tab-faq" class="cms-tab-pane">
+
+  <!-- A. FAQ CATEGORIES -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">🗂️ FAQ Categories ({{ faq_categories|length }} Categories)</h3>
+    </div>
+    
+    <!-- ADD CATEGORY -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add FAQ Category</h4>
+      <form method="post" action="/{{ slug }}/content/faq-categories/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div class="editor-grid">
+          <div>
+            <label class="form-label">SLUG (lowercase, e.g. logistics)</label>
+            <input type="text" name="slug" placeholder="e.g. logistics" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">DISPLAY TITLE</label>
+            <input type="text" name="title" placeholder="e.g. Venue & Hospitality" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">ORDER INDEX</label>
+            <input type="number" name="order_idx" value="{{ (faq_categories|length) + 1 }}" class="form-control">
+          </div>
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add Category</button>
+      </form>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      {% for cat in faq_categories %}
+      <div style="background:var(--card-sub);border:1px solid var(--card-border);border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;">
+        <span style="font-weight:800;color:var(--text-heading);font-size:13.5px;">{{ cat.title }}</span>
+        <code style="font-size:11px;color:var(--muted);">({{ cat.slug }})</code>
+        <form method="post" action="/{{ slug }}/content/faq-categories/delete/{{ cat.id }}" onsubmit="return confirm('Delete category {{ cat.title }}?');" style="margin:0;">
+          <input type="hidden" name="csrf" value="{{ csrf() }}">
+          <button type="submit" style="background:none;border:0;color:var(--red);cursor:pointer;font-weight:900;font-size:13px;" title="Delete category">✕</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- B. FAQ QUESTIONS -->
+  <div class="ops-card">
+    <div class="ops-card-head">
+      <h3 class="ops-card-title">❓ Frequently Asked Questions ({{ faqs|length }} Items)</h3>
+    </div>
+
+    <!-- ADD FAQ -->
+    <div class="add-item-box">
+      <h4 style="font-size:14px;font-weight:800;color:var(--primary);margin-bottom:12px;">+ Add New Question &amp; Answer</h4>
+      <form method="post" action="/{{ slug }}/content/faq/add">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div style="display:grid;grid-template-columns:1fr 220px;gap:12px;margin-bottom:10px;">
+          <div>
+            <label class="form-label">QUESTION TEXT</label>
+            <input type="text" name="question" placeholder="e.g. Can cross-college teams participate?" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">CATEGORY</label>
+            <select name="category_slug" class="form-control">
+              {% for cat in faq_categories %}
+              <option value="{{ cat.slug }}">{{ cat.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">DETAILED ANSWER</label>
+          <textarea name="answer" rows="3" class="form-control" placeholder="Accurate and helpful explanation..." required></textarea>
+        </div>
+        <button type="submit" class="btn-export" style="font-size:12.5px;padding:7px 16px;">+ Add FAQ Item</button>
+      </form>
+    </div>
+
+    <!-- EXISTING FAQS -->
+    <div>
+      {% for f in faqs %}
+      <div class="item-row">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;background:var(--badge-bg);color:var(--badge-text);border:1px solid var(--badge-border);padding:2px 8px;border-radius:6px;font-weight:700;">
+              {{ f.category_slug.upper() }}
+            </span>
+            <b style="color:var(--text-heading);font-size:14px;">{{ f.question }}</b>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45;">{{ f.answer }}</p>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-edit-sm" 
+                  onclick="openEditFaqModal({{ f.id }}, '{{ f.category_slug }}', '{{ f.question|replace("'", "\\'") }}', '{{ f.answer|replace("'", "\\'") }}', {{ f.order_idx }})">
+            Edit
+          </button>
+          <form method="post" action="/{{ slug }}/content/faq/delete/{{ f.id }}" onsubmit="return confirm('Delete this FAQ?');" style="margin:0;">
+            <input type="hidden" name="csrf" value="{{ csrf() }}">
+            <button type="submit" class="btn-reject" style="padding:4px 8px;font-size:11px;">✕</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- UNIVERSAL EDIT MODAL LIGHTBOX -->
+<!-- ========================================== -->
+<div id="universalEditModal" class="cms-modal" onclick="closeEditModal(event)">
+  <div class="cms-modal-card" onclick="event.stopPropagation()">
+    <button type="button" class="cms-modal-close" onclick="closeEditModal()">✕</button>
+    <h3 id="modalEditTitle" style="font-size:18px;font-weight:800;color:var(--text-heading);margin-bottom:16px;">Edit Item</h3>
+    
+    <form id="universalEditForm" method="post" action="">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      <div id="modalEditFields"></div>
+      <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px;">
+        <button type="button" onclick="closeEditModal()" class="btn-reject" style="background:var(--input-bg);color:var(--text);border:1px solid var(--card-border);">Cancel</button>
+        <button type="submit" class="btn-approve">Save Changes</button>
+      </div>
+    </form>
   </div>
 </div>
+
+<script>
+// SUB-TAB SWITCHING & HASH PERSISTENCE
+function switchCmsTab(tabId, btn) {
+  document.querySelectorAll('.cms-tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.cms-tab-btn').forEach(el => el.classList.remove('active'));
+  
+  const pane = document.getElementById(tabId);
+  if (pane) pane.classList.add('active');
+  if (btn) btn.classList.add('active');
+  
+  window.location.hash = tabId;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const hash = window.location.hash.replace('#', '');
+  if (hash) {
+    const pane = document.getElementById(hash);
+    if (pane) {
+      document.querySelectorAll('.cms-tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.cms-tab-btn').forEach(el => el.classList.remove('active'));
+      pane.classList.add('active');
+      const btn = document.querySelector(`[onclick*="${hash}"]`);
+      if (btn) btn.classList.add('active');
+    }
+  }
+});
+
+// MODAL CONTROLS
+function closeEditModal(e) {
+  document.getElementById('universalEditModal').classList.remove('active');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeEditModal();
+});
+
+function openModalBase(title, actionUrl, fieldsHtml) {
+  document.getElementById('modalEditTitle').textContent = title;
+  document.getElementById('universalEditForm').action = actionUrl;
+  document.getElementById('modalEditFields').innerHTML = fieldsHtml;
+  document.getElementById('universalEditModal').classList.add('active');
+}
+
+// 1. Edit Schedule Slot
+function openEditScheduleModal(id, day, slot, title, desc, badge, order) {
+  const html = `
+    <div style="margin-bottom:12px;">
+      <label class="form-label">DAY / DATE TITLE</label>
+      <input type="text" name="day_title" value="${day}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">TIME SLOT</label>
+      <input type="text" name="time_slot" value="${slot}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">TITLE</label>
+      <input type="text" name="title" value="${title}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">BADGE</label>
+      <input type="text" name="badge" value="${badge}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ORDER INDEX</label>
+      <input type="number" name="order_idx" value="${order}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">DESCRIPTION</label>
+      <textarea name="description" rows="2" class="form-control">${desc}</textarea>
+    </div>
+  `;
+  openModalBase('Edit Schedule Slot', `/{{ slug }}/content/schedule/edit/${id}`, html);
+}
+
+// 2. Edit Track
+function openEditTrackModal(id, title, tagline, desc, icon, color, order) {
+  const html = `
+    <div style="margin-bottom:12px;">
+      <label class="form-label">TITLE</label>
+      <input type="text" name="title" value="${title}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">TAGLINE</label>
+      <input type="text" name="tagline" value="${tagline}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ICON</label>
+      <input type="text" name="icon" value="${icon}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">COLOR ACCENT</label>
+      <input type="text" name="color_accent" value="${color}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ORDER INDEX</label>
+      <input type="number" name="order_idx" value="${order}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">DESCRIPTION</label>
+      <textarea name="description" rows="3" class="form-control">${desc}</textarea>
+    </div>
+  `;
+  openModalBase('Edit Track / Domain', `/{{ slug }}/content/tracks/edit/${id}`, html);
+}
+
+// 3. Edit Problem Statement
+function openEditProblemModal(id, trackId, code, title, desc, pdfUrl) {
+  let trackOptions = `{% for trk in tracks %}<option value="{{ trk.id }}">{{ trk.title }}</option>{% endfor %}`;
+  const html = `
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ASSOCIATED TRACK</label>
+      <select name="track_id" id="modalTrackSelect" class="form-control">${trackOptions}</select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">CODE</label>
+      <input type="text" name="code" value="${code}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">TITLE</label>
+      <input type="text" name="title" value="${title}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">PDF / BRIEF URL</label>
+      <input type="text" name="pdf_url" value="${pdfUrl}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">DESCRIPTION</label>
+      <textarea name="description" rows="3" class="form-control">${desc}</textarea>
+    </div>
+  `;
+  openModalBase('Edit Problem Statement', `/{{ slug }}/content/problems/edit/${id}`, html);
+  setTimeout(() => {
+    const sel = document.getElementById('modalTrackSelect');
+    if (sel) sel.value = trackId;
+  }, 50);
+}
+
+// 4. Edit Rule
+function openEditRuleModal(id, cat, text, order) {
+  const html = `
+    <div style="margin-bottom:12px;">
+      <label class="form-label">CATEGORY</label>
+      <input type="text" name="category" value="${cat}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ORDER INDEX</label>
+      <input type="number" name="order_idx" value="${order}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">RULE TEXT</label>
+      <textarea name="rule_text" rows="3" class="form-control" required>${text}</textarea>
+    </div>
+  `;
+  openModalBase('Edit Guideline Rule', `/{{ slug }}/content/rules/edit/${id}`, html);
+}
+
+// 5. Edit Judging Criterion
+function openEditJudgingModal(id, crit, weight, desc, order) {
+  const html = `
+    <div style="margin-bottom:12px;">
+      <label class="form-label">CRITERION NAME</label>
+      <input type="text" name="criterion" value="${crit}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">WEIGHTAGE PERCENTAGE</label>
+      <input type="text" name="weightage" value="${weight}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ORDER INDEX</label>
+      <input type="number" name="order_idx" value="${order}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">DESCRIPTION</label>
+      <textarea name="description" rows="2" class="form-control">${desc}</textarea>
+    </div>
+  `;
+  openModalBase('Edit Judging Criterion', `/{{ slug }}/content/judging/edit/${id}`, html);
+}
+
+// 6. Edit Perk
+function openEditPerkModal(id, title, desc, icon, order) {
+  const html = `
+    <div style="margin-bottom:12px;">
+      <label class="form-label">TITLE</label>
+      <input type="text" name="title" value="${title}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ICON</label>
+      <input type="text" name="icon" value="${icon}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ORDER INDEX</label>
+      <input type="number" name="order_idx" value="${order}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">DESCRIPTION</label>
+      <textarea name="description" rows="2" class="form-control">${desc}</textarea>
+    </div>
+  `;
+  openModalBase('Edit Participant Perk', `/{{ slug }}/content/prize-perks/edit/${id}`, html);
+}
+
+// 7. Edit Vision Pillar
+function openEditPillarModal(id, title, desc, icon, order) {
+  const html = `
+    <div style="margin-bottom:12px;">
+      <label class="form-label">TITLE</label>
+      <input type="text" name="title" value="${title}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ICON</label>
+      <input type="text" name="icon" value="${icon}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ORDER INDEX</label>
+      <input type="number" name="order_idx" value="${order}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">DESCRIPTION</label>
+      <textarea name="description" rows="3" class="form-control">${desc}</textarea>
+    </div>
+  `;
+  openModalBase('Edit Vision Pillar', `/{{ slug }}/content/pillars/edit/${id}`, html);
+}
+
+// 8. Edit FAQ Item
+function openEditFaqModal(id, catSlug, q, a, order) {
+  let catOptions = `{% for cat in faq_categories %}<option value="{{ cat.slug }}">{{ cat.title }}</option>{% endfor %}`;
+  const html = `
+    <div style="margin-bottom:12px;">
+      <label class="form-label">CATEGORY</label>
+      <select name="category_slug" id="modalFaqCatSelect" class="form-control">${catOptions}</select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">QUESTION</label>
+      <input type="text" name="question" value="${q}" class="form-control" required>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ORDER INDEX</label>
+      <input type="number" name="order_idx" value="${order}" class="form-control">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="form-label">ANSWER</label>
+      <textarea name="answer" rows="4" class="form-control" required>${a}</textarea>
+    </div>
+  `;
+  openModalBase('Edit FAQ Item', `/{{ slug }}/content/faq/edit/${id}`, html);
+  setTimeout(() => {
+    const sel = document.getElementById('modalFaqCatSelect');
+    if (sel) sel.value = catSlug;
+  }, 50);
+}
+
+// 9. Milestone Form Controls & Edit Modal
+function toggleAddMilestoneForm() {
+  const box = document.getElementById('addMilestoneBox');
+  if (!box) return;
+  box.style.display = (box.style.display === 'none' || !box.style.display) ? 'block' : 'none';
+  if (box.style.display === 'block') {
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function applyQuickDateToAdd(val) {
+  if (!val) return;
+  const parts = val.split('-');
+  if (parts.length === 3) {
+    const y = parts[0];
+    const m = parts[1];
+    const d = parts[2];
+    const sDay = document.getElementById('start_day_select');
+    const sMonth = document.getElementById('start_month_select');
+    const sYear = document.getElementById('start_year_select');
+    const eDay = document.getElementById('end_day_select');
+    const eMonth = document.getElementById('end_month_select');
+    const eYear = document.getElementById('end_year_select');
+    if (sDay) sDay.value = d;
+    if (sMonth) sMonth.value = m;
+    if (sYear) sYear.value = y;
+    if (eDay) eDay.value = d;
+    if (eMonth) eMonth.value = m;
+    if (eYear) eYear.value = y;
+  }
+}
+
+function renderDateDropdowns(prefix, sel) {
+  const months = [
+    {v:'01', l:'01 - Jan'}, {v:'02', l:'02 - Feb'}, {v:'03', l:'03 - Mar'},
+    {v:'04', l:'04 - Apr'}, {v:'05', l:'05 - May'}, {v:'06', l:'06 - Jun'},
+    {v:'07', l:'07 - Jul'}, {v:'08', l:'08 - Aug'}, {v:'09', l:'09 - Sep'},
+    {v:'10', l:'10 - Oct'}, {v:'11', l:'11 - Nov'}, {v:'12', l:'12 - Dec'}
+  ];
+  let dayOpts = '';
+  for(let i=1; i<=31; i++){
+    const val = String(i).padStart(2, '0');
+    dayOpts += `<option value="${val}" ${sel.day === val ? 'selected' : ''}>${val}</option>`;
+  }
+  let monthOpts = '';
+  months.forEach(m => {
+    monthOpts += `<option value="${m.v}" ${sel.month === m.v ? 'selected' : ''}>${m.l}</option>`;
+  });
+  let yearOpts = '';
+  ['2026', '2027', '2028', '2029', '2030'].forEach(y => {
+    yearOpts += `<option value="${y}" ${sel.year === y ? 'selected' : ''}>${y}</option>`;
+  });
+  let hourOpts = '';
+  for(let i=1; i<=12; i++){
+    const val = String(i).padStart(2, '0');
+    hourOpts += `<option value="${val}" ${sel.hour === val ? 'selected' : ''}>${val}</option>`;
+  }
+  let minOpts = '';
+  for(let i=0; i<60; i+=5){
+    const val = String(i).padStart(2, '0');
+    minOpts += `<option value="${val}" ${sel.minute === val ? 'selected' : ''}>${val}</option>`;
+  }
+  let ampmOpts = `
+    <option value="AM" ${sel.ampm === 'AM' ? 'selected' : ''}>AM</option>
+    <option value="PM" ${sel.ampm === 'PM' ? 'selected' : ''}>PM</option>
+  `;
+  return `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <select name="${prefix}_day" class="form-control" style="width:72px;" title="Day">${dayOpts}</select>
+      <select name="${prefix}_month" class="form-control" style="width:115px;" title="Month">${monthOpts}</select>
+      <select name="${prefix}_year" class="form-control" style="width:85px;" title="Year">${yearOpts}</select>
+      <span style="font-weight:700;color:var(--muted);padding:0 2px;">at</span>
+      <select name="${prefix}_hour" class="form-control" style="width:72px;" title="Hour (1-12)">${hourOpts}</select>
+      <span style="font-weight:800;color:var(--primary);">:</span>
+      <select name="${prefix}_minute" class="form-control" style="width:72px;" title="Minute">${minOpts}</select>
+      <select name="${prefix}_ampm" class="form-control" style="width:75px;" title="AM/PM">${ampmOpts}</select>
+      <span style="font-size:11px;font-weight:800;color:var(--accent);background:var(--badge-bg);padding:4px 8px;border-radius:6px;">IST</span>
+    </div>
+  `;
+}
+
+function openEditRoundModalFromBtn(btn) {
+  const d = btn.dataset;
+  openEditRoundModal(
+    d.id, d.roundNum, d.title, d.stage, d.type, d.desc,
+    d.syear, d.smonth, d.sday, d.shour, d.sminute, d.sampm,
+    d.eyear, d.emonth, d.eday, d.ehour, d.eminute, d.eampm
+  );
+}
+
+function openEditRoundModal(id, roundNum, title, stage, subType, desc, sYear, sMonth, sDay, sHour, sMin, sAmpm, eYear, eMonth, eDay, eHour, eMin, eAmpm) {
+  const subTypeOptions = `
+    <option value="deck" ${subType === 'deck' ? 'selected' : ''}>Pitch Deck / Presentation (PPT / PDF Upload + Drive Link)</option>
+    <option value="progress" ${subType === 'progress' ? 'selected' : ''}>Mid-Hack Progress (Public GitHub Repository)</option>
+    <option value="final" ${subType === 'final' ? 'selected' : ''}>Final Delivery (Live Deployed URL + Demo Video + GitHub)</option>
+    <option value="custom" ${subType === 'custom' ? 'selected' : ''}>General / Custom (Project Abstract + Deliverable Link + Optional File)</option>
+  `;
+
+  const startDropdowns = renderDateDropdowns('start', {
+    day: sDay, month: sMonth, year: sYear, hour: sHour, minute: sMin, ampm: sAmpm
+  });
+
+  const endDropdowns = renderDateDropdowns('end', {
+    day: eDay, month: eMonth, year: eYear, hour: eHour, minute: eMin, ampm: eAmpm
+  });
+
+  const html = `
+    <div class="editor-grid" style="grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+      <div>
+        <label class="form-label">MILESTONE TITLE <span style="color:var(--red)">*</span></label>
+        <input type="text" name="title" value="${title}" class="form-control" required>
+      </div>
+      <div>
+        <label class="form-label">STAGE NAME <span style="color:var(--red)">*</span></label>
+        <input type="text" name="stage_name" value="${stage}" class="form-control" required>
+      </div>
+    </div>
+    <div class="editor-grid" style="grid-template-columns:1fr 2fr;gap:14px;margin-bottom:12px;">
+      <div>
+        <label class="form-label">ROUND NUMBER</label>
+        <input type="number" name="round_num" value="${roundNum}" class="form-control" required>
+      </div>
+      <div>
+        <label class="form-label">SUBMISSION DELIVERABLE TYPE</label>
+        <select name="submission_type" class="form-control">${subTypeOptions}</select>
+      </div>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label class="form-label">INSTRUCTIONS / DESCRIPTION</label>
+      <textarea name="description" rows="2" class="form-control">${desc}</textarea>
+    </div>
+    <div style="margin-bottom:14px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;padding:12px;">
+      <label class="form-label" style="color:var(--green);margin-bottom:8px;">🟢 OPENS AT (IST - Dropdowns)</label>
+      ${startDropdowns}
+    </div>
+    <div style="margin-bottom:14px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;padding:12px;">
+      <label class="form-label" style="color:var(--red);margin-bottom:8px;">🔒 DEADLINE / CLOSES AT (IST - Dropdowns)</label>
+      ${endDropdowns}
+    </div>
+  `;
+  openModalBase(`Edit Milestone Round ${roundNum}`, `/{{ slug }}/content/rounds/edit/${id}`, html);
+}
+</script>
 {% endblock %}

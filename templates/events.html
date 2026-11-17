@@ -10,13 +10,13 @@
       Build. Innovate. <em>Hack the Future.</em>
     </h1>
     <p class="event-hero-sub">
-      {{ info.get('tagline', "Central India's Premier 36-Hour National Hackathon") }}
+      {{ info.get('tagline', "Central India's Premier 12-Hour National Hackathon") }}
     </p>
 
     <div class="event-stats-strip">
-      <div class="stat-pill">{{ icon('clock') }} <b>{{ info.get('duration', '36 Continuous Hours') }}</b></div>
-      <div class="stat-pill">{{ icon('trophy') }} <b>{{ info.get('prize_pool', '₹2,00,000+ Prize Pool') }}</b></div>
-      <div class="stat-pill">{{ icon('calendar') }} <b>{{ info.get('dates', 'March 20 – 22, 2027') }}</b></div>
+      <div class="stat-pill">{{ icon('clock') }} <b>{{ info.get('duration', '12 Continuous Hours') }}</b></div>
+      <div class="stat-pill">{{ icon('trophy') }} <b>{{ info.get('prize_pool', '₹50,000+ Prize Pool') }}</b></div>
+      <div class="stat-pill">{{ icon('calendar') }} <b>{{ info.get('dates', 'January 17, 2027') }}</b></div>
       <div class="stat-pill">{{ icon('globe') }} <b>{{ info.get('venue', 'MITS Campus, Gwalior') }}</b></div>
       <div class="stat-pill">{{ icon('users') }} <b>{{ info.get('team_size', '4 to 6 Members/Team') }}</b></div>
     </div>
@@ -50,62 +50,112 @@
 
     <!-- STAGES STEPPER -->
     <div class="stepper-wrap">
-      <div class="stepper-title">Hackathon Milestone Progress</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+        <div class="stepper-title" style="margin-bottom:0;">Hackathon 3-Stage Milestone Progress</div>
+        <div style="font-size:12px;color:#6d28d9;background:#ede7fd;padding:4px 12px;border-radius:20px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+          {{ icon('clock') }} Indian Standard Time (IST) · Server Verified
+        </div>
+      </div>
       <div class="stepper-bar">
         <div class="step-item step-completed">
           <div class="step-circle">{{ icon('check') }}</div>
           <div class="step-label">Registration</div>
           <div class="step-sub">Confirmed</div>
         </div>
-        <div class="step-line step-line-done"></div>
-        <div class="step-item {{ 'step-completed' if submissions.get(1) else 'step-active' }}">
-          <div class="step-circle">{{ icon('check') if submissions.get(1) else '1' }}</div>
+
+        <!-- ROUND 1 STEP -->
+        {% set r1 = rounds[0] if rounds|length > 0 else none %}
+        {% set sub1 = submissions.get(r1.id) if r1 else none %}
+        <div class="step-line {{ 'step-line-done' if sub1 else '' }}"></div>
+        <div class="step-item {{ 'step-completed' if sub1 else ('step-active' if r1 and r1.timing.is_open else '') }}">
+          <div class="step-circle">{{ icon('check') if sub1 else '1' }}</div>
           <div class="step-label">Round 1: Idea PPT</div>
-          <div class="step-sub">{{ 'Submitted' if submissions.get(1) else 'Open Now' }}</div>
+          <div class="step-sub">
+            {% if sub1 %}Submitted{% elif r1 and r1.timing.is_open %}Open Now{% else %}Upcoming{% endif %}
+          </div>
         </div>
-        <div class="step-line {{ 'step-line-done' if submissions.get(1) else '' }}"></div>
-        <div class="step-item {{ 'step-completed' if submissions.get(2) else '' }}">
-          <div class="step-circle">{{ icon('check') if submissions.get(2) else '2' }}</div>
-          <div class="step-label">Round 2: GitHub</div>
-          <div class="step-sub">{{ 'Submitted' if submissions.get(2) else 'Upcoming' }}</div>
+
+        <!-- ROUND 2 STEP -->
+        {% set r2 = rounds[1] if rounds|length > 1 else none %}
+        {% set sub2 = submissions.get(r2.id) if r2 else none %}
+        <div class="step-line {{ 'step-line-done' if sub2 else '' }}"></div>
+        <div class="step-item {{ 'step-completed' if sub2 else ('step-active' if team_qualified_round >= 2 and r2 and r2.timing.is_open else '') }}">
+          <div class="step-circle">{{ icon('check') if sub2 else '2' }}</div>
+          <div class="step-label">Round 2: Prototype</div>
+          <div class="step-sub">
+            {% if sub2 %}
+              Submitted
+            {% elif team_qualified_round >= 2 %}
+              {{ 'Open Now' if r2 and r2.timing.is_open else 'Shortlisted' }}
+            {% else %}
+              Shortlist Pending
+            {% endif %}
+          </div>
         </div>
-        <div class="step-line {{ 'step-line-done' if submissions.get(2) else '' }}"></div>
-        <div class="step-item {{ 'step-completed' if submissions.get(3) else '' }}">
-          <div class="step-circle">{{ icon('check') if submissions.get(3) else '3' }}</div>
-          <div class="step-label">Round 3: Final Demo</div>
-          <div class="step-sub">{{ 'Submitted' if submissions.get(3) else 'Upcoming' }}</div>
-        </div>
-        <div class="step-line"></div>
-        <div class="step-item">
-          <div class="step-circle">{{ icon('trophy') }}</div>
-          <div class="step-label">Grand Jury</div>
-          <div class="step-sub">Day 3</div>
+
+        <!-- ROUND 3 STEP (OFFLINE) -->
+        {% set r3 = rounds[2] if rounds|length > 2 else none %}
+        <div class="step-line {{ 'step-line-done' if team_qualified_round >= 3 else '' }}"></div>
+        <div class="step-item {{ 'step-completed' if team_qualified_round >= 3 else '' }}">
+          <div class="step-circle">
+            {% if team_qualified_round >= 3 %}{{ icon('trophy') }}{% else %}3{% endif %}
+          </div>
+          <div class="step-label">Round 3: Offline Finals</div>
+          <div class="step-sub">
+            {% if team_qualified_round >= 3 %}
+              Finalist Pass
+            {% else %}
+              Offline Stage
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ROUND SUBMISSION ACCORDIONS / CARDS -->
-    <h3 style="font-size:22px;font-weight:800;color:#0d0a1f;margin:28px 0 16px;display:flex;align-items:center;gap:10px;">
-      {{ icon('upload') }} Round Submissions &amp; Deliverables
-    </h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin:28px 0 16px;">
+      <h3 style="font-size:22px;font-weight:800;color:#0d0a1f;margin:0;display:flex;align-items:center;gap:10px;">
+        {{ icon('upload') }} Hackathon Milestone Submissions &amp; Finalist Pass
+      </h3>
+      <div style="font-size:12.5px;color:#5a4f7c;background:#faf7ff;border:1px solid #e0d5fa;padding:5px 14px;border-radius:20px;font-weight:700;">
+        🕒 Server IST: <b>{{ server_ist }}</b>
+      </div>
+    </div>
 
     <div class="rounds-grid">
       {% for r in rounds %}
       {% set sub = submissions.get(r.id) %}
+
+      <!-- ============================================== -->
+      <!-- ROUND 1: PPT SUBMISSION (PDF COMPULSORY) -->
+      <!-- ============================================== -->
+      {% if r.round_num == 1 %}
       <div class="round-card {{ 'has-submission' if sub else '' }}">
         <div class="round-card-header">
           <div>
             <div class="round-stage-badge">{{ r.stage_name }}</div>
             <h4 class="round-card-title">{{ r.title }}</h4>
             <div class="round-deadline">
-              {{ icon('clock') }} <b>Deadline:</b> {{ r.deadline }}
+              {{ icon('clock') }} <b>Window:</b> 
+              {% if r.timing.start_formatted and r.timing.end_formatted %}
+                {{ r.timing.start_formatted }} &nbsp;➔&nbsp; {{ r.timing.end_formatted }}
+              {% else %}
+                {{ r.deadline }}
+              {% endif %}
             </div>
           </div>
-          <div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             {% if sub %}
             <span class="sub-badge sub-done">{{ icon('check') }} Submitted</span>
+            {% endif %}
+            {% if r.timing.is_open %}
+            <span class="sub-badge sub-open" style="background:#dcfce7;color:#166534;border:1px solid #86efac;">
+              {{ icon('bolt') }} Accepting Responses
+            </span>
+            {% elif r.timing.is_upcoming %}
+            <span class="sub-badge sub-upcoming">⏳ Opens Soon</span>
             {% else %}
-            <span class="sub-badge sub-open">{{ icon('bolt') }} {{ r.status_label }}</span>
+            <span class="sub-badge sub-closed">🔒 Submissions Closed</span>
             {% endif %}
           </div>
         </div>
@@ -119,40 +169,50 @@
             <span>✓ Current Submission: <b>{{ sub.project_title or 'Untitled Project' }}</b></span>
             <span style="font-size:12px;color:#6b5d92;">Last updated: {{ sub.updated_at or sub.submitted_at }}</span>
           </div>
+
+          {% if sub.problem_statement %}
+          <div style="font-size:13px;font-weight:700;color:#6d28d9;background:#ede7fd;padding:6px 12px;border-radius:8px;margin-bottom:8px;">
+            🎯 Selected Problem Statement: <b>{{ sub.problem_statement }}</b>
+          </div>
+          {% endif %}
+
           {% if sub.project_summary %}
-          <p class="sub-preview-summary">{{ sub.project_summary }}</p>
+          <p class="sub-preview-summary"><b>Proposed Solution:</b> {{ sub.project_summary }}</p>
+          {% endif %}
+
+          {% if sub.uniqueness %}
+          <div style="font-size:13px;color:#15803d;background:#f0fdf4;padding:8px 12px;border-radius:8px;margin-bottom:10px;border-left:3px solid #16a34a;">
+            <b>💡 Uniqueness &amp; Novelty:</b> {{ sub.uniqueness }}
+          </div>
           {% endif %}
 
           <div class="sub-preview-links">
             {% if sub.file_path %}
             <a href="{{ url_for('static', filename='uploads/submissions/' + sub.file_path) }}" target="_blank" class="sub-link-chip">
-              {{ icon('doc') }} Download Uploaded Deck ({{ sub.file_path.split('.')[-1]|upper }})
+              {{ icon('doc') }} Download Project Presentation (PDF)
             </a>
             {% endif %}
             {% if sub.drive_link %}
             <a href="{{ sub.drive_link }}" target="_blank" rel="noopener" class="sub-link-chip">
-              {{ icon('link') }} Cloud / Presentation Link {{ icon('external') }}
-            </a>
-            {% endif %}
-            {% if sub.github_link %}
-            <a href="{{ sub.github_link }}" target="_blank" rel="noopener" class="sub-link-chip">
-              {{ icon('github') }} GitHub Repository {{ icon('external') }}
-            </a>
-            {% endif %}
-            {% if sub.demo_link %}
-            <a href="{{ sub.demo_link }}" target="_blank" rel="noopener" class="sub-link-chip">
-              {{ icon('globe') }} Live Demo / Video Link {{ icon('external') }}
+              {{ icon('link') }} Backup Drive / Presentation Link {{ icon('external') }}
             </a>
             {% endif %}
           </div>
 
+          {% if r.timing.is_open %}
           <button type="button" class="btn-toggle-edit" onclick="toggleSubmissionForm('form-round-{{ r.id }}', this)">
-            ✏️ Edit Submission Details
+            ✏️ Edit Submission Details (Open until {{ r.timing.end_formatted }})
           </button>
+          {% else %}
+          <div style="margin-top:10px;font-size:12.5px;color:#6b7280;font-weight:600;">
+            🔒 Submissions closed — Further edits or updates are locked.
+          </div>
+          {% endif %}
         </div>
         {% endif %}
 
-        <!-- SUBMISSION FORM -->
+        {% if r.timing.is_open %}
+        <!-- ROUND 1 SUBMISSION FORM -->
         <div id="form-round-{{ r.id }}" class="sub-form-container" style="{{ 'display:none;' if sub else 'display:block;' }}">
           <form method="post" action="/events/submit/{{ r.id }}" enctype="multipart/form-data">
             <input type="hidden" name="csrf" value="{{ csrf() }}">
@@ -160,56 +220,50 @@
             <div class="form-grid col-2">
               <div class="fg">
                 <label>Project / Solution Title <span class="req">*</span></label>
-                <input type="text" name="project_title" value="{{ sub.project_title if sub else '' }}" placeholder="e.g. SmartAgro AI Assistant" required>
+                <input type="text" name="project_title" value="{{ sub.project_title if sub else '' }}" placeholder="e.g. AI-Powered Vernacular Healthcare Assistant" required>
               </div>
 
-              {% if r.submission_type == 'deck' %}
               <div class="fg">
-                <label>Google Drive / Pitch Deck URL</label>
-                <input type="url" name="drive_link" value="{{ sub.drive_link if sub else '' }}" placeholder="https://drive.google.com/... or Canva link">
+                <label>Allocated Problem Statement <span class="req">*</span></label>
+                <select name="problem_statement" required style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #a855f7;background:#fff;font-size:13.5px;">
+                  <option value="">-- Choose Problem Statement from Dropdown --</option>
+                  {% for prob in all_problems %}
+                  {% set opt_val = '[' ~ prob.code ~ '] ' ~ prob.title %}
+                  <option value="{{ opt_val }}" {{ 'selected' if sub and opt_val in (sub.problem_statement or '') else '' }}>
+                    [{{ prob.code }}] {{ prob.title }} ({{ prob.track_title }})
+                  </option>
+                  {% endfor %}
+                </select>
               </div>
-              {% elif r.submission_type == 'progress' %}
-              <div class="fg">
-                <label>Public GitHub Repository URL <span class="req">*</span></label>
-                <input type="url" name="github_link" value="{{ sub.github_link if sub else '' }}" placeholder="https://github.com/your-team/repo" required>
-              </div>
-              {% else %}
-              <div class="fg">
-                <label>Deployed Project Live URL</label>
-                <input type="url" name="demo_link" value="{{ sub.demo_link if sub else '' }}" placeholder="https://myproject.vercel.app">
-              </div>
-              {% endif %}
             </div>
 
             <div class="fg" style="margin-top:14px;">
-              <label>Project Abstract / Brief Summary <span class="req">*</span></label>
-              <textarea name="project_summary" rows="3" placeholder="Briefly summarize your problem statement, technical stack, core functionality, and live progress..." required>{{ sub.project_summary if sub else '' }}</textarea>
+              <label>Project Solution Description &amp; Technical Approach <span class="req">*</span></label>
+              <textarea name="project_summary" rows="3" placeholder="Explain your proposed solution architecture, target audience, core modules, tech stack, and workflow..." required>{{ sub.project_summary if sub else '' }}</textarea>
             </div>
 
-            {% if r.submission_type == 'deck' %}
             <div class="fg" style="margin-top:14px;">
-              <label>Upload Pitch Deck (PPT, PPTX, or PDF) <span style="font-weight:400;color:#6b5d92;font-size:12px;">(Max 25MB)</span></label>
-              <input type="file" name="submission_file" accept=".pdf,.ppt,.pptx">
-              {% if sub and sub.file_path %}
-              <small style="color:#047857;margin-top:4px;">Current file: {{ sub.file_path }} (Uploading a new file will replace it)</small>
-              {% endif %}
+              <label>Uniqueness, Innovation &amp; Competitive Novelty <span class="req">*</span></label>
+              <textarea name="uniqueness" rows="2" placeholder="What makes your solution unique? Detail how your approach differs from existing solutions and its key innovations..." required>{{ sub.uniqueness if sub else '' }}</textarea>
             </div>
-            {% elif r.submission_type == 'final' %}
+
             <div class="form-grid col-2" style="margin-top:14px;">
               <div class="fg">
-                <label>GitHub Repository URL <span class="req">*</span></label>
-                <input type="url" name="github_link" value="{{ sub.github_link if sub else '' }}" placeholder="https://github.com/..." required>
+                <label>Upload Project Presentation (PDF Format Compulsory) <span class="req">*</span> <span style="font-weight:400;color:#dc2626;font-size:12px;">(.pdf ONLY · Max 25MB)</span></label>
+                <input type="file" name="submission_file" accept=".pdf" {{ '' if sub and sub.file_path else 'required' }}>
+                {% if sub and sub.file_path %}
+                <small style="color:#047857;margin-top:4px;display:block;">Current file: {{ sub.file_path }} (Uploading a new file will replace it)</small>
+                {% endif %}
               </div>
               <div class="fg">
-                <label>2-Minute Video Demo URL (YouTube / Drive) <span class="req">*</span></label>
-                <input type="url" name="drive_link" value="{{ sub.drive_link if sub else '' }}" placeholder="https://youtube.com/watch?v=... or Drive" required>
+                <label>Backup Google Drive / Pitch Deck URL <span style="font-weight:400;color:#6b5d92;font-size:12px;">(Optional)</span></label>
+                <input type="url" name="drive_link" value="{{ sub.drive_link if sub else '' }}" placeholder="https://drive.google.com/... or Canva link">
               </div>
             </div>
-            {% endif %}
 
             <div style="margin-top:18px;display:flex;gap:12px;align-items:center;">
               <button type="submit" class="btn-submit-sub">
-                {{ icon('upload') }} {{ 'Update Submission' if sub else 'Submit Deliverable' }}
+                {{ icon('upload') }} {{ 'Update Round 1 Submission' if sub else 'Submit Round 1 Presentation' }}
               </button>
               {% if sub %}
               <button type="button" class="btn-cancel-edit" onclick="toggleSubmissionForm('form-round-{{ r.id }}')">
@@ -219,7 +273,361 @@
             </div>
           </form>
         </div>
+        {% elif r.timing.is_upcoming %}
+        <div style="background:#fffbeb;border:1.5px dashed #f59e0b;border-radius:16px;padding:16px 20px;margin-top:14px;color:#92400e;display:flex;align-items:flex-start;gap:12px;">
+          <div style="font-size:22px;line-height:1;">⏳</div>
+          <div>
+            <b style="font-size:14px;">Round 1 Submission Window Locked</b>
+            <div style="font-size:13px;margin-top:3px;line-height:1.5;">
+              Submissions open strictly on <b>{{ r.timing.start_formatted }}</b>. Please prepare your project presentation deck in PDF format.
+            </div>
+          </div>
+        </div>
+        {% else %}
+        {% if not sub %}
+        <div style="background:#fef2f2;border:1.5px dashed #ef4444;border-radius:16px;padding:16px 20px;margin-top:14px;color:#991b1b;display:flex;align-items:flex-start;gap:12px;">
+          <div style="font-size:22px;line-height:1;">🔒</div>
+          <div>
+            <b style="font-size:14px;">Round 1 Submissions Closed</b>
+            <div style="font-size:13px;margin-top:3px;line-height:1.5;">
+              The deadline for Round 1 was <b>{{ r.timing.end_formatted }}</b>. Submissions are now closed.
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endif %}
       </div>
+
+      <!-- ============================================== -->
+      <!-- ROUND 2: GITHUB & WORKING PROTOTYPE (SHORTLIST) -->
+      <!-- ============================================== -->
+      {% elif r.round_num == 2 %}
+      <div class="round-card {{ 'has-submission' if sub else '' }}">
+        <div class="round-card-header">
+          <div>
+            <div class="round-stage-badge">{{ r.stage_name }}</div>
+            <h4 class="round-card-title">{{ r.title }}</h4>
+            <div class="round-deadline">
+              {{ icon('clock') }} <b>Window:</b> 
+              {% if r.timing.start_formatted and r.timing.end_formatted %}
+                {{ r.timing.start_formatted }} &nbsp;➔&nbsp; {{ r.timing.end_formatted }}
+              {% else %}
+                {{ r.deadline }}
+              {% endif %}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            {% if sub %}
+            <span class="sub-badge sub-done">{{ icon('check') }} Submitted</span>
+            {% endif %}
+            {% if team_qualified_round >= 2 %}
+              {% if r.timing.is_open %}
+              <span class="sub-badge sub-open" style="background:#dcfce7;color:#166534;border:1px solid #86efac;">
+                {{ icon('bolt') }} Accepting Responses
+              </span>
+              {% elif r.timing.is_upcoming %}
+              <span class="sub-badge sub-upcoming">⏳ Opens Soon</span>
+              {% else %}
+              <span class="sub-badge sub-closed">🔒 Submissions Closed</span>
+              {% endif %}
+            {% else %}
+              <span class="sub-badge sub-upcoming" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;">
+                🔒 Shortlist Pending
+              </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <p class="round-desc">{{ r.description }}</p>
+
+        <!-- QUALIFICATION GATE FOR ROUND 2 -->
+        {% if team_qualified_round < 2 %}
+        <div style="background:#faf7ff;border:1.5px dashed #a855f7;border-radius:18px;padding:22px 24px;margin-top:14px;color:#4c416e;display:flex;align-items:flex-start;gap:14px;">
+          <div style="font-size:28px;line-height:1;">🔒</div>
+          <div>
+            <b style="font-size:15px;color:#0d0a1f;">Round 2 Access Locked · Round 1 Jury Screening in Progress</b>
+            <div style="font-size:13.5px;margin-top:4px;line-height:1.55;color:#5a4f7c;">
+              Round 2 submission is strictly reserved for teams that are <b>shortlisted from Round 1</b> (PPT Presentation) by the evaluation committee. Once your team is shortlisted on the admin portal, this round will automatically unlock for submission of your GitHub repository, live prototype link, demo video, and README file.
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <!-- TEAM IS QUALIFIED FOR ROUND 2 -->
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:10px 16px;margin:12px 0;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:18px;">⭐</span>
+          <span style="font-size:13.5px;font-weight:700;color:#166534;">
+            Congratulations! Your team was shortlisted from Round 1 and is qualified to submit deliverables for Round 2.
+          </span>
+        </div>
+
+        {% if sub %}
+        <!-- EXISTING ROUND 2 PREVIEW -->
+        <div class="sub-preview-box">
+          <div class="sub-preview-title">
+            <span>✓ Round 2 Prototype Checkpoint: <b>{{ sub.project_title or 'Prototype Submission' }}</b></span>
+            <span style="font-size:12px;color:#6b5d92;">Last updated: {{ sub.updated_at or sub.submitted_at }}</span>
+          </div>
+
+          {% if sub.project_summary %}
+          <p class="sub-preview-summary"><b>Implementation Summary:</b> {{ sub.project_summary }}</p>
+          {% endif %}
+
+          {% if sub.readme_text %}
+          <div style="background:#ffffff;border:1px solid #d1fae5;border-radius:10px;padding:10px 14px;margin-bottom:12px;">
+            <b style="font-size:12px;color:#065f46;text-transform:uppercase;">⚙️ Setup &amp; Execution Instructions:</b>
+            <pre style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#374151;white-space:pre-wrap;margin-top:4px;">{{ sub.readme_text }}</pre>
+          </div>
+          {% endif %}
+
+          <div class="sub-preview-links">
+            {% if sub.github_link %}
+            <a href="{{ sub.github_link }}" target="_blank" rel="noopener" class="sub-link-chip">
+              {{ icon('github') }} Public GitHub Repository {{ icon('external') }}
+            </a>
+            {% endif %}
+            {% if sub.drive_link %}
+            <a href="{{ sub.drive_link }}" target="_blank" rel="noopener" class="sub-link-chip">
+              {{ icon('play') }} Demo Video (2-5 Min) {{ icon('external') }}
+            </a>
+            {% endif %}
+            {% if sub.demo_link %}
+            <a href="{{ sub.demo_link }}" target="_blank" rel="noopener" class="sub-link-chip">
+              {{ icon('globe') }} Live Web Deployment {{ icon('external') }}
+            </a>
+            {% endif %}
+            {% if sub.readme_file %}
+            <a href="{{ url_for('static', filename='uploads/submissions/' + sub.readme_file) }}" target="_blank" class="sub-link-chip">
+              {{ icon('doc') }} Download Uploaded README ({{ sub.readme_file.split('.')[-1]|upper }})
+            </a>
+            {% endif %}
+          </div>
+
+          {% if r.timing.is_open %}
+          <button type="button" class="btn-toggle-edit" onclick="toggleSubmissionForm('form-round-{{ r.id }}', this)">
+            ✏️ Edit Submission Details (Open until {{ r.timing.end_formatted }})
+          </button>
+          {% else %}
+          <div style="margin-top:10px;font-size:12.5px;color:#6b7280;font-weight:600;">
+            🔒 Submissions closed — Further edits or updates are locked.
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if r.timing.is_open %}
+        <!-- ROUND 2 SUBMISSION FORM -->
+        <div id="form-round-{{ r.id }}" class="sub-form-container" style="{{ 'display:none;' if sub else 'display:block;' }}">
+          <form method="post" action="/events/submit/{{ r.id }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf" value="{{ csrf() }}">
+
+            <div class="form-grid col-2">
+              <div class="fg">
+                <label>Project / Solution Title <span class="req">*</span></label>
+                <input type="text" name="project_title" value="{{ sub.project_title if sub else '' }}" placeholder="e.g. SmartAgro Automated Drone System" required>
+              </div>
+
+              <div class="fg">
+                <label>Public GitHub Repository URL <span class="req">*</span></label>
+                <input type="url" name="github_link" value="{{ sub.github_link if sub else '' }}" placeholder="https://github.com/your-team/repo" required>
+              </div>
+            </div>
+
+            <div class="form-grid col-2" style="margin-top:14px;">
+              <div class="fg">
+                <label>2 to 5 Minutes Demo Video URL <span class="req">*</span></label>
+                <input type="url" name="drive_link" value="{{ sub.drive_link if sub else '' }}" placeholder="https://youtube.com/watch?v=... or Google Drive link" required>
+              </div>
+
+              <div class="fg">
+                <label>Live Deployment Link <span style="font-weight:400;color:#6b5d92;font-size:12px;">(If applicable / Optional)</span></label>
+                <input type="url" name="demo_link" value="{{ sub.demo_link if sub else '' }}" placeholder="https://myproject.vercel.app">
+              </div>
+            </div>
+
+            <div class="fg" style="margin-top:14px;">
+              <label>Working Prototype Progress &amp; Implementation Summary <span class="req">*</span></label>
+              <textarea name="project_summary" rows="3" placeholder="Summarize your working modules, technical architecture, dependencies, and APIs integrated..." required>{{ sub.project_summary if sub else '' }}</textarea>
+            </div>
+
+            <div class="fg" style="margin-top:14px;">
+              <label>README Setup &amp; Execution Instructions <span class="req">*</span></label>
+              <textarea name="readme_text" rows="3" placeholder="Provide step-by-step instructions to run and test your project locally (e.g. npm install, environment variables, docker run, python app.py)..." required>{{ sub.readme_text if sub else '' }}</textarea>
+            </div>
+
+            <div class="fg" style="margin-top:14px;">
+              <label>Upload README File (.md, .txt, or .pdf) <span style="font-weight:400;color:#6b5d92;font-size:12px;">(Optional file upload)</span></label>
+              <input type="file" name="readme_file" accept=".md,.txt,.pdf">
+              {% if sub and sub.readme_file %}
+              <small style="color:#047857;margin-top:4px;display:block;">Current README file: {{ sub.readme_file }}</small>
+              {% endif %}
+            </div>
+
+            <div style="margin-top:18px;display:flex;gap:12px;align-items:center;">
+              <button type="submit" class="btn-submit-sub">
+                {{ icon('upload') }} {{ 'Update Round 2 Submission' if sub else 'Submit Round 2 Prototype Deliverables' }}
+              </button>
+              {% if sub %}
+              <button type="button" class="btn-cancel-edit" onclick="toggleSubmissionForm('form-round-{{ r.id }}')">
+                Cancel
+              </button>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+        {% elif r.timing.is_upcoming %}
+        <div style="background:#fffbeb;border:1.5px dashed #f59e0b;border-radius:16px;padding:16px 20px;margin-top:14px;color:#92400e;display:flex;align-items:flex-start;gap:12px;">
+          <div style="font-size:22px;line-height:1;">⏳</div>
+          <div>
+            <b style="font-size:14px;">Round 2 Submission Window Locked</b>
+            <div style="font-size:13px;margin-top:3px;line-height:1.5;">
+              Round 2 submission window is scheduled to open on <b>{{ r.timing.start_formatted }}</b> for shortlisted teams.
+            </div>
+          </div>
+        </div>
+        {% else %}
+        {% if not sub %}
+        <div style="background:#fef2f2;border:1.5px dashed #ef4444;border-radius:16px;padding:16px 20px;margin-top:14px;color:#991b1b;display:flex;align-items:flex-start;gap:12px;">
+          <div style="font-size:22px;line-height:1;">🔒</div>
+          <div>
+            <b style="font-size:14px;">Round 2 Submissions Closed</b>
+            <div style="font-size:13px;margin-top:3px;line-height:1.5;">
+              The deadline for Round 2 prototype checkpoint was <b>{{ r.timing.end_formatted }}</b>. Submissions are closed.
+            </div>
+          </div>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% endif %}
+      </div>
+
+      <!-- ============================================== -->
+      <!-- ROUND 3: OFFLINE FINAL EVALUATION (NO UPLOADS) -->
+      <!-- ============================================== -->
+      {% elif r.round_num == 3 %}
+      <div class="round-card" style="border:2px solid {{ '#facc15' if team_qualified_round >= 3 else '#e0d5fa' }};background:{{ 'linear-gradient(180deg,#fffdf5,#ffffff)' if team_qualified_round >= 3 else '#ffffff' }};">
+        <div class="round-card-header">
+          <div>
+            <div class="round-stage-badge" style="color:#b45309;">{{ r.stage_name }}</div>
+            <h4 class="round-card-title">{{ r.title }}</h4>
+            <div class="round-deadline">
+              {{ icon('clock') }} <b>Grand Jury Offline Window:</b> 
+              {% if r.timing.start_formatted and r.timing.end_formatted %}
+                {{ r.timing.start_formatted }} &nbsp;➔&nbsp; {{ r.timing.end_formatted }}
+              {% else %}
+                {{ r.deadline }}
+              {% endif %}
+            </div>
+          </div>
+          <div>
+            {% if team_qualified_round >= 3 %}
+            <span style="font-size:13px;font-weight:800;color:#854d0e;background:#fef9c3;border:1.5px solid #facc15;padding:6px 16px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;">
+              🏆 Grand Jury Finalist Pass
+            </span>
+            {% else %}
+            <span style="font-size:13px;font-weight:700;color:#6b7280;background:#f3f4f6;border:1px solid #e5e7eb;padding:5px 14px;border-radius:20px;">
+              🏛️ Offline Evaluation Stage
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <p class="round-desc">{{ r.description }}</p>
+
+        <!-- NO UPLOADS/FORM: DISPLAY OFFLINE VENUE & FINALIST DETAILS -->
+        {% if team_qualified_round >= 3 %}
+        <!-- GOLDEN FINALIST PASS -->
+        <div style="background:linear-gradient(135deg,#fefce8,#fef9c3);border:2px solid #eab308;border-radius:20px;padding:24px 28px;margin-top:16px;box-shadow:0 10px 30px rgba(234,179,8,0.15);">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-bottom:1.5px dashed #ca8a04;padding-bottom:16px;margin-bottom:18px;">
+            <div>
+              <span style="font-size:11px;font-weight:800;letter-spacing:1px;background:#ca8a04;color:#fff;padding:3px 10px;border-radius:8px;text-transform:uppercase;">
+                Official Stage Finalist Pass
+              </span>
+              <h3 style="font-size:22px;font-weight:900;color:#713f12;margin:6px 0 2px;">
+                {{ team.name }} <span style="font-size:16px;color:#a16207;">({{ team.team_id }})</span>
+              </h3>
+              <div style="font-size:13.5px;color:#854d0e;font-weight:600;">
+                Domain Track: <b>{{ team.domain }}</b>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:12px;font-weight:800;color:#a16207;">EVALUATION MODE</div>
+              <div style="font-size:16px;font-weight:900;color:#713f12;">Stage Pitch &amp; Jury Defense</div>
+            </div>
+          </div>
+
+          <div class="form-grid col-2" style="gap:16px;margin-bottom:18px;">
+            <div style="background:#ffffff;border:1px solid #fde047;border-radius:14px;padding:14px 18px;">
+              <div style="font-size:11.5px;font-weight:800;color:#a16207;text-transform:uppercase;">📍 Physical Reporting Venue</div>
+              <div style="font-size:15px;font-weight:800;color:#0d0a1f;margin-top:4px;">
+                Central Auditorium &amp; Innovation Center
+              </div>
+              <div style="font-size:13px;color:#4b5563;margin-top:2px;">
+                Madhav Institute of Technology &amp; Science (MITS Campus), Gwalior (M.P.)
+              </div>
+            </div>
+
+            <div style="background:#ffffff;border:1px solid #fde047;border-radius:14px;padding:14px 18px;">
+              <div style="font-size:11.5px;font-weight:800;color:#a16207;text-transform:uppercase;">⏱️ Reporting Time &amp; Pitch Format</div>
+              <div style="font-size:15px;font-weight:800;color:#0d0a1f;margin-top:4px;">
+                January 17, 2027 · Reporting 09:30 PM Sharp
+              </div>
+              <div style="font-size:13px;color:#4b5563;margin-top:2px;">
+                <b>5 Min Live Pitch</b> on stage + <b>3 Min Grand Jury Q&amp;A</b>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#ffffff;border:1px solid #fde047;border-radius:14px;padding:16px 20px;">
+            <div style="font-size:12.5px;font-weight:800;color:#713f12;margin-bottom:8px;text-transform:uppercase;">
+              📋 Essential Finalist Instructions &amp; What to Bring:
+            </div>
+            <ul style="font-size:13.5px;color:#374151;line-height:1.65;padding-left:20px;margin:0;">
+              <li>All team members must report in person at the venue with their valid college/institute photo ID card.</li>
+              <li>Carry development laptops, power chargers, spike busters/extension strips, and any physical hardware prototypes.</li>
+              <li>Ensure an offline copy of your codebase, live prototype demo, and presentation slides is saved on a USB flash drive.</li>
+              <li>Live prototypes must run on stage via the provided HDMI or USB-C projector console.</li>
+              <li>Station desks are allocated at the registration desk upon entrance to the auditorium.</li>
+            </ul>
+          </div>
+        </div>
+        {% else %}
+        <!-- IN-PROGRESS REVIEW / VENUE INFORMATION -->
+        <div style="background:#faf7ff;border:1.5px solid #e0d5fa;border-radius:18px;padding:22px 26px;margin-top:14px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <span style="font-size:26px;">🏛️</span>
+            <div>
+              <h4 style="font-size:16px;font-weight:800;color:#0d0a1f;margin:0;">
+                Offline Grand Jury Final Stage (January 17, 2027)
+              </h4>
+              <div style="font-size:13px;color:#6b5d92;margin-top:2px;">
+                Venue: Central Auditorium &amp; Innovation Center, MITS Campus, Gwalior
+              </div>
+            </div>
+          </div>
+
+          <p style="font-size:14px;color:#4c416e;line-height:1.6;margin-bottom:14px;">
+            Round 3 is the exclusive offline climax of ACM CodeNite 2027. There is <b>no online submission or form upload</b> for this round. Top teams shortlisted by the jury after evaluating Round 2 prototypes will receive their official offline stage reporting pass right here.
+          </p>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;background:#ffffff;border:1px solid #ede7fd;border-radius:14px;padding:14px 18px;">
+            <div>
+              <div style="font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;">Grand Jury Schedule</div>
+              <div style="font-size:13.5px;font-weight:700;color:#0d0a1f;margin-top:2px;">10:00 PM – 11:30 PM</div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;">Pitch Presentation</div>
+              <div style="font-size:13.5px;font-weight:700;color:#0d0a1f;margin-top:2px;">5 Min Demo + 3 Min Q&amp;A</div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:800;color:#6d28d9;text-transform:uppercase;">Finalist Selection</div>
+              <div style="font-size:13.5px;font-weight:700;color:#0d0a1f;margin-top:2px;">Evaluation in Progress</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
       {% endfor %}
     </div>
   </div>
@@ -230,7 +638,7 @@
   <!-- ========================================== -->
   <div class="event-nav-tabs">
     <button class="event-tab-btn active" onclick="switchEventTab('tab-schedule', this)">
-      {{ icon('clock') }} 36-Hour Schedule
+      {{ icon('clock') }} 12-Hour Schedule
     </button>
     <button class="event-tab-btn" onclick="switchEventTab('tab-tracks', this)">
       {{ icon('bulb') }} Themes &amp; Problem Statements
@@ -246,12 +654,12 @@
     </button>
   </div>
 
-  <!-- TAB 1: 36-HOUR SCHEDULE -->
+  <!-- TAB 1: 12-HOUR SCHEDULE -->
   <section id="tab-schedule" class="event-tab-content active">
     <div class="sec-head">
       <span class="sec-badge">{{ icon('clock') }} Chronological Schedule</span>
-      <h2 class="sec-title">The 36-Hour <em>Timeline</em></h2>
-      <p class="sec-sub">From the opening keynote to the final grand jury pitches — track every hour of ACM CodeNite 2027.</p>
+      <h2 class="sec-title">The 12-Hour <em>Timeline</em></h2>
+      <p class="sec-sub">From the opening keynote to the final grand jury pitches — track every hour of ACM CodeNite 2027 on January 17, 2027.</p>
     </div>
 
     <div class="schedule-days-container">
@@ -486,6 +894,8 @@
 .sub-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:14px;font-size:12.5px;font-weight:700;}
 .sub-badge.sub-done{background:#dcfce7;color:#166534;border:1px solid #86efac;}
 .sub-badge.sub-open{background:#ede7fd;color:#5b1ed6;border:1px solid #c4b5fd;}
+.sub-badge.sub-upcoming{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
+.sub-badge.sub-closed{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
 .round-desc{font-size:14.5px;color:#4c416e;line-height:1.55;margin-bottom:16px;}
 
 /* PREVIEW BOX */

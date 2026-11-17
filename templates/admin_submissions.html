@@ -65,12 +65,76 @@
 {% endblock %}
 
 {% block content %}
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:20px;">
   <div>
-    <h1 style="font-size:26px;font-weight:800;color:#fff;">Milestone Submissions &amp; Jury Review</h1>
+    <h1 style="font-size:26px;font-weight:800;color:var(--text-heading);">Milestone Submissions &amp; Team Advancement</h1>
     <p style="font-size:14px;color:var(--muted);margin-top:4px;">
-      Evaluate team milestone deliverables: Round 1 PPT pitch decks, Round 2 GitHub checkpoints, and Round 3 final live demos.
+      Evaluate team milestone deliverables across Round 1 (PPT), Round 2 (GitHub &amp; Prototype), and select offline Finalists for Round 3.
     </p>
+  </div>
+</div>
+
+<!-- ADVANCEMENT SUMMARY & BATCH CONTROLS -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;">
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:16px;">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;">Registered Teams</div>
+    <div style="font-size:24px;font-weight:800;color:var(--text-heading);margin-top:4px;">{{ total_teams_count }}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px;">All verified participants</div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:16px;">
+    <div style="font-size:11px;font-weight:700;color:#c084fc;text-transform:uppercase;">Round 1 PPT Submissions</div>
+    <div style="font-size:24px;font-weight:800;color:#c084fc;margin-top:4px;">{{ r1_subs_count }}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px;">PDF presentations submitted</div>
+  </div>
+  <div style="background:var(--card);border:1px solid rgba(59,130,246,0.3);border-radius:16px;padding:16px;">
+    <div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;">Shortlisted for Round 2</div>
+    <div style="font-size:24px;font-weight:800;color:#60a5fa;margin-top:4px;">{{ r2_qualified_count }}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px;">Prototype checkpoint unlocked</div>
+  </div>
+  <div style="background:var(--card);border:1px solid rgba(234,179,8,0.3);border-radius:16px;padding:16px;">
+    <div style="font-size:11px;font-weight:700;color:#facc15;text-transform:uppercase;">Selected for Round 3</div>
+    <div style="font-size:24px;font-weight:800;color:#facc15;margin-top:4px;">{{ r3_qualified_count }}</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px;">Offline Grand Jury Finalists</div>
+  </div>
+</div>
+
+<!-- BATCH TEAM ADVANCEMENT SELECTION TOOL -->
+<div class="ops-card" style="margin-bottom:24px;padding:18px 22px;">
+  <div style="font-size:14px;font-weight:800;color:var(--text-heading);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+    ⚡ Batch Team Shortlisting &amp; Stage Promotion
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
+    <!-- Step 1 to Step 2 -->
+    <form method="post" action="/{{ slug }}/teams/batch-advance" style="background:var(--card-sub);border:1px solid var(--card-border);border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      <input type="hidden" name="target_round" value="2">
+      <div>
+        <div style="font-size:12.5px;font-weight:800;color:#60a5fa;">⭐ Select Teams for Round 2 (Prototype)</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Select how many top Round 1 teams qualify:</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="number" name="top_n" placeholder="e.g. 15" min="1" max="100" style="width:75px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-heading);padding:6px 10px;border-radius:8px;font-size:12.5px;" required>
+        <button type="submit" class="btn-approve" style="background:#3b82f6;padding:7px 14px;font-size:12px;">
+          Promote to R2
+        </button>
+      </div>
+    </form>
+
+    <!-- Step 2 to Step 3 -->
+    <form method="post" action="/{{ slug }}/teams/batch-advance" style="background:var(--card-sub);border:1px solid var(--card-border);border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <input type="hidden" name="csrf" value="{{ csrf() }}">
+      <input type="hidden" name="target_round" value="3">
+      <div>
+        <div style="font-size:12.5px;font-weight:800;color:#facc15;">🏆 Select Finalists for Round 3 (Offline)</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Select how many top Round 2 teams qualify:</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="number" name="top_n" placeholder="e.g. 6" min="1" max="50" style="width:75px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-heading);padding:6px 10px;border-radius:8px;font-size:12.5px;" required>
+        <button type="submit" class="btn-approve" style="background:linear-gradient(90deg,#eab308,#f59e0b);color:#000;padding:7px 14px;font-size:12px;font-weight:800;">
+          Select Finalists
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -97,17 +161,31 @@
           <span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:#c084fc;">
             {{ sub.team_code }}
           </span>
-          <span style="font-size:18px;font-weight:800;color:#fff;">{{ sub.team_name }}</span>
+          <span style="font-size:18px;font-weight:800;color:var(--text-heading);">{{ sub.team_name }}</span>
           <span style="font-size:11.5px;background:rgba(168,85,247,0.18);border:1px solid rgba(168,85,247,0.3);color:#d8b4fe;padding:2px 8px;border-radius:8px;font-weight:600;">
             {{ sub.domain }}
           </span>
+          <!-- STAGE ADVANCEMENT BADGE -->
+          {% if sub.team_qualified_round >= 3 %}
+          <span style="background:rgba(234,179,8,0.2);border:1px solid #eab308;color:#fde047;font-size:11.5px;padding:2px 10px;border-radius:12px;font-weight:800;">
+            🏆 Round 3 Offline Finalist
+          </span>
+          {% elif sub.team_qualified_round >= 2 %}
+          <span style="background:rgba(59,130,246,0.18);border:1px solid #3b82f6;color:#93c5fd;font-size:11.5px;padding:2px 10px;border-radius:12px;font-weight:700;">
+            ⭐ Qualified for Round 2
+          </span>
+          {% else %}
+          <span style="background:rgba(148,163,184,0.15);border:1px solid #94a3b8;color:#cbd5e1;font-size:11.5px;padding:2px 10px;border-radius:12px;font-weight:700;">
+            Stage 1: Round 1 (PPT)
+          </span>
+          {% endif %}
         </div>
         <div style="font-size:12.5px;color:var(--muted);margin-top:4px;">
-          Stage: <b style="color:#e2d9f3;">Round {{ sub.round_num }} · {{ sub.round_title }}</b> · Submitted: {{ sub.submitted_at[:16] if sub.submitted_at else '' }}
+          Submitted to: <b style="color:var(--text-heading);">Round {{ sub.round_num }} · {{ sub.round_title }}</b> · Submitted: {{ sub.submitted_at[:16] if sub.submitted_at else '' }}
         </div>
       </div>
 
-      <div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         {% if sub.status == 'Shortlisted' %}
         <span class="badge-verified" style="font-size:13px;padding:5px 12px;">⭐ Shortlisted</span>
         {% elif sub.status == 'Winner' %}
@@ -115,89 +193,157 @@
         {% elif sub.status == 'Under Review' %}
         <span class="badge-pending" style="font-size:13px;padding:5px 12px;">🔍 Under Review</span>
         {% else %}
-        <span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 12px;border-radius:12px;font-size:13px;font-weight:700;">
+        <span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:var(--text-heading);padding:5px 12px;border-radius:12px;font-size:13px;font-weight:700;">
           📥 {{ sub.status }}
         </span>
         {% endif %}
       </div>
     </div>
 
+    <!-- PROBLEM STATEMENT (ROUND 1) -->
+    {% if sub.problem_statement %}
+    <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-left:4px solid #a855f7;border-radius:8px;padding:8px 14px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;">Allocated Problem Statement:</div>
+      <div style="font-size:13.5px;font-weight:700;color:#c084fc;margin-top:2px;">🎯 {{ sub.problem_statement }}</div>
+    </div>
+    {% endif %}
+
     <!-- PROJECT INFO -->
-    <div style="margin-bottom:16px;">
+    <div style="margin-bottom:14px;">
       <h3 style="font-size:17px;font-weight:800;color:#38bdf8;">
         {{ sub.project_title or 'Untitled Project' }}
       </h3>
       {% if sub.project_summary %}
-      <p style="font-size:13.5px;color:#d8b4fe;line-height:1.55;margin-top:6px;background:rgba(255,255,255,0.02);padding:12px 14px;border-radius:10px;border-left:3px solid var(--accent);">
+      <p style="font-size:13.5px;color:var(--text);line-height:1.55;margin-top:6px;background:var(--input-bg);padding:12px 14px;border-radius:10px;border-left:3px solid var(--accent);">
         {{ sub.project_summary }}
       </p>
       {% endif %}
     </div>
 
-    <!-- ASSET DELIVERABLES -->
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
-      {% if sub.file_path %}
-      <a href="{{ url_for('static', filename=sub.file_path) }}" target="_blank" class="link-pill link-deck">
-        📄 Download Pitch Deck
-      </a>
-      {% endif %}
+    <!-- UNIQUENESS & NOVELTY (ROUND 1) -->
+    {% if sub.uniqueness %}
+    <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-left:3px solid #10b981;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+      <div style="font-size:11.5px;font-weight:800;color:#10b981;text-transform:uppercase;">💡 Uniqueness, Innovation &amp; Value Proposition:</div>
+      <p style="font-size:13px;color:var(--text);line-height:1.5;margin-top:4px;">{{ sub.uniqueness }}</p>
+    </div>
+    {% endif %}
 
-      {% if sub.drive_link %}
-      <a href="{{ sub.drive_link }}" target="_blank" class="link-pill link-deck">
-        📁 Google Drive Folder ↗
+    <!-- README INSTRUCTIONS (ROUND 2) -->
+    {% if sub.readme_text %}
+    <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-left:3px solid #3b82f6;border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+      <div style="font-size:11.5px;font-weight:800;color:#60a5fa;text-transform:uppercase;">⚙️ README Setup &amp; Execution Instructions:</div>
+      <pre style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);white-space:pre-wrap;margin-top:4px;">{{ sub.readme_text }}</pre>
+    </div>
+    {% endif %}
+
+    <!-- ASSET DELIVERABLES -->
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+      {% if sub.file_path %}
+      <a href="{{ url_for('static', filename='uploads/submissions/' + sub.file_path) }}" target="_blank" class="link-pill link-deck">
+        📄 Download Presentation Deck (PDF) ↗
       </a>
       {% endif %}
 
       {% if sub.github_link %}
       <a href="{{ sub.github_link }}" target="_blank" class="link-pill link-github">
-        💻 GitHub Repository ↗
+        💻 Public GitHub Repository ↗
       </a>
       {% endif %}
 
       {% if sub.demo_link %}
       <a href="{{ sub.demo_link }}" target="_blank" class="link-pill link-demo">
-        🚀 Live Web Demo ↗
+        🚀 Live Web Deployment ↗
       </a>
       {% endif %}
 
-      {% if not sub.file_path and not sub.drive_link and not sub.github_link and not sub.demo_link %}
-      <span style="font-size:12px;color:var(--muted);font-style:italic;">No external links attached</span>
+      {% if sub.drive_link %}
+      <a href="{{ sub.drive_link }}" target="_blank" class="link-pill link-deck">
+        🎥 {% if sub.round_num == 2 %}Demo Video (2-5 Min){% else %}Cloud / Drive Folder{% endif %} ↗
+      </a>
+      {% endif %}
+
+      {% if sub.readme_file %}
+      <a href="{{ url_for('static', filename='uploads/submissions/' + sub.readme_file) }}" target="_blank" class="link-pill link-deck">
+        📋 Download README File ({{ sub.readme_file.split('.')[-1]|upper }}) ↗
+      </a>
+      {% endif %}
+
+      {% if not sub.file_path and not sub.drive_link and not sub.github_link and not sub.demo_link and not sub.readme_file %}
+      <span style="font-size:12px;color:var(--muted);font-style:italic;">No external links or files attached</span>
       {% endif %}
     </div>
 
-    <!-- JURY EVALUATION CONTROLS -->
-    <form method="post" action="/{{ slug }}/submissions/{{ sub.id }}/evaluate" class="eval-form">
-      <input type="hidden" name="csrf" value="{{ csrf() }}">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <label style="font-size:12px;font-weight:700;color:#c4b5fd;">STATUS:</label>
-        <select name="status" style="background:#190e32;border:1px solid rgba(168,85,247,0.4);border-radius:10px;padding:6px 10px;color:#fff;font-size:12.5px;outline:none;">
-          <option value="Submitted" {{ 'selected' if sub.status == 'Submitted' }}>Submitted</option>
-          <option value="Under Review" {{ 'selected' if sub.status == 'Under Review' }}>Under Review</option>
-          <option value="Shortlisted" {{ 'selected' if sub.status == 'Shortlisted' }}>Shortlisted</option>
-          <option value="Winner" {{ 'selected' if sub.status == 'Winner' }}>Winner</option>
-          <option value="Disqualified" {{ 'selected' if sub.status == 'Disqualified' }}>Disqualified</option>
-        </select>
-      </div>
+    <!-- JURY EVALUATION & STAGE ADVANCEMENT CONTROLS -->
+    <div style="background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <!-- Evaluation Form -->
+      <form method="post" action="/{{ slug }}/submissions/{{ sub.id }}/evaluate" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;">
+        <input type="hidden" name="csrf" value="{{ csrf() }}">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);">STATUS:</label>
+          <select name="status" class="form-control" style="width:auto;padding:5px 10px;font-size:12.5px;">
+            <option value="Submitted" {{ 'selected' if sub.status == 'Submitted' }}>Submitted</option>
+            <option value="Under Review" {{ 'selected' if sub.status == 'Under Review' }}>Under Review</option>
+            <option value="Shortlisted" {{ 'selected' if sub.status == 'Shortlisted' }}>Shortlisted</option>
+            <option value="Winner" {{ 'selected' if sub.status == 'Winner' }}>Winner</option>
+            <option value="Disqualified" {{ 'selected' if sub.status == 'Disqualified' }}>Disqualified</option>
+          </select>
+        </div>
 
-      <div style="flex:1;min-width:240px;display:flex;align-items:center;gap:8px;">
-        <label style="font-size:12px;font-weight:700;color:#c4b5fd;">REMARKS:</label>
-        <input type="text" name="remarks" value="{{ sub.remarks or '' }}" placeholder="Feedback or jury notes..." 
-               style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(168,85,247,0.3);border-radius:10px;padding:6px 12px;color:#fff;font-size:12.5px;outline:none;">
-      </div>
+        <div style="flex:1;min-width:200px;display:flex;align-items:center;gap:6px;">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);">REMARKS:</label>
+          <input type="text" name="remarks" value="{{ sub.remarks or '' }}" placeholder="Feedback or jury notes..." class="form-control" style="font-size:12px;padding:5px 10px;">
+        </div>
 
-      <button type="submit" class="btn-approve" style="padding:6px 14px;font-size:12px;">
-        Save Evaluation
-      </button>
-    </form>
+        <button type="submit" class="btn-approve" style="padding:6px 14px;font-size:12px;">
+          Save
+        </button>
+      </form>
+
+      <!-- Team Round Advancement Quick Actions -->
+      <div style="display:flex;align-items:center;gap:6px;">
+        {% if sub.team_qualified_round == 1 %}
+        <form method="post" action="/{{ slug }}/teams/{{ sub.team_pk }}/set-round" style="display:inline;">
+          <input type="hidden" name="csrf" value="{{ csrf() }}">
+          <input type="hidden" name="qualified_round" value="2">
+          <button type="submit" class="btn-approve" style="background:#3b82f6;font-size:11.5px;padding:6px 12px;">
+            ⭐ Promote to Round 2
+          </button>
+        </form>
+        {% elif sub.team_qualified_round == 2 %}
+        <form method="post" action="/{{ slug }}/teams/{{ sub.team_pk }}/set-round" style="display:inline;">
+          <input type="hidden" name="csrf" value="{{ csrf() }}">
+          <input type="hidden" name="qualified_round" value="3">
+          <button type="submit" class="btn-approve" style="background:linear-gradient(90deg,#eab308,#f59e0b);color:#000;font-weight:800;font-size:11.5px;padding:6px 12px;">
+            🏆 Select for Round 3 (Offline)
+          </button>
+        </form>
+        <form method="post" action="/{{ slug }}/teams/{{ sub.team_pk }}/set-round" style="display:inline;">
+          <input type="hidden" name="csrf" value="{{ csrf() }}">
+          <input type="hidden" name="qualified_round" value="1">
+          <button type="submit" class="btn-reject" style="font-size:11px;padding:5px 8px;">
+            Revert R1
+          </button>
+        </form>
+        {% else %}
+        <form method="post" action="/{{ slug }}/teams/{{ sub.team_pk }}/set-round" style="display:inline;">
+          <input type="hidden" name="csrf" value="{{ csrf() }}">
+          <input type="hidden" name="qualified_round" value="2">
+          <button type="submit" class="btn-reject" style="font-size:11px;padding:5px 8px;">
+            Revert to R2
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
   </div>
   {% endfor %}
 </div>
 {% else %}
 <div class="ops-card" style="text-align:center;padding:50px 20px;">
   <div style="font-size:42px;margin-bottom:10px;">📦</div>
-  <h3 style="font-size:18px;color:#fff;">No Submissions Recorded Yet</h3>
+  <h3 style="font-size:18px;color:var(--text-heading);">No Submissions Recorded Yet</h3>
   <p style="font-size:13.5px;color:var(--muted);margin-top:6px;">
-    Teams will submit their Round 1 decks, GitHub repos, and demos as the 36-hour hackathon progresses.
+    Teams will submit their Round 1 PDF presentations and Round 2 GitHub prototypes as the hackathon progresses.
   </p>
 </div>
 {% endif %}

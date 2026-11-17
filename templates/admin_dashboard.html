@@ -2,44 +2,44 @@
 {% block title %}Dashboard Overview{% endblock %}
 {% block content %}
 <div style="margin-bottom:24px;">
-  <h1 style="font-size:26px;font-weight:800;color:#fff;">Organizer Command Center</h1>
+  <h1 style="font-size:26px;font-weight:800;color:var(--text-heading);">Organizer Command Center</h1>
   <p style="font-size:14px;color:var(--muted);margin-top:4px;">Live telemetry, team registrations, payment approvals, and milestone deliverables for ACM CodeNite 2027.</p>
 </div>
 
 <!-- TOP METRIC CARDS -->
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:28px;">
   <!-- TOTAL TEAMS -->
-  <div style="background:#130c25;border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
+  <div style="background:var(--card);border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
     <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;">Total Teams</div>
-    <div style="font-size:32px;font-weight:800;color:#fff;margin:6px 0 2px;">{{ stats.total_teams }}</div>
-    <div style="font-size:12px;color:#a78bfa;">Registered squads</div>
+    <div style="font-size:32px;font-weight:800;color:var(--text-heading);margin:6px 0 2px;">{{ stats.total_teams }}</div>
+    <div style="font-size:12px;color:var(--primary);font-weight:600;">Registered squads</div>
   </div>
 
   <!-- PENDING VERIFICATION (ACTION NEEDED) -->
-  <div style="background:#1a101f;border:1.5px solid rgba(245,158,11,.4);border-radius:18px;padding:20px;">
-    <div style="font-size:12px;font-weight:700;color:#fcd34d;text-transform:uppercase;letter-spacing:.6px;">Pending Payments</div>
+  <div style="background:rgba(245,158,11,.08);border:1.5px solid rgba(245,158,11,.4);border-radius:18px;padding:20px;">
+    <div style="font-size:12px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:.6px;">Pending Payments</div>
     <div style="font-size:32px;font-weight:800;color:#f59e0b;margin:6px 0 2px;">{{ stats.pending_payments }}</div>
-    <a href="/{{ slug }}/payments?status=pending" style="font-size:12px;color:#fcd34d;text-decoration:underline;">Review verification queue →</a>
+    <a href="/{{ slug }}/payments?status=pending" style="font-size:12px;color:#d97706;font-weight:700;text-decoration:underline;">Review verification queue →</a>
   </div>
 
   <!-- VERIFIED TEAMS -->
-  <div style="background:#0c1a17;border:1.5px solid rgba(16,185,129,.4);border-radius:18px;padding:20px;">
-    <div style="font-size:12px;font-weight:700;color:#6ee7b7;text-transform:uppercase;letter-spacing:.6px;">Verified Teams</div>
+  <div style="background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.4);border-radius:18px;padding:20px;">
+    <div style="font-size:12px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.6px;">Verified Teams</div>
     <div style="font-size:32px;font-weight:800;color:#10b981;margin:6px 0 2px;">{{ stats.verified_teams }}</div>
-    <div style="font-size:12px;color:#6ee7b7;">Confirmed &amp; Approved</div>
+    <div style="font-size:12px;color:#059669;font-weight:600;">Confirmed &amp; Approved</div>
   </div>
 
   <!-- TOTAL PARTICIPANTS -->
-  <div style="background:#130c25;border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
+  <div style="background:var(--card);border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
     <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;">Total Participants</div>
-    <div style="font-size:32px;font-weight:800;color:#38bdf8;margin:6px 0 2px;">{{ stats.total_members }}</div>
+    <div style="font-size:32px;font-weight:800;color:#0284c7;margin:6px 0 2px;">{{ stats.total_members }}</div>
     <div style="font-size:12px;color:var(--muted);">Students across India</div>
   </div>
 
   <!-- FUNDS COLLECTED -->
-  <div style="background:#130c25;border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
+  <div style="background:var(--card);border:1.5px solid var(--card-border);border-radius:18px;padding:20px;">
     <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;">Initial Verification Pool</div>
-    <div style="font-size:32px;font-weight:800;color:#e879f9;margin:6px 0 2px;">₹{{ stats.verified_teams * 50 }}</div>
+    <div style="font-size:32px;font-weight:800;color:#c026d3;margin:6px 0 2px;">₹{{ stats.verified_teams * 50 }}</div>
     <div style="font-size:12px;color:var(--muted);">₹50 fee collected</div>
   </div>
 </div>
@@ -52,9 +52,9 @@
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
     {% for track, count in track_counts.items() %}
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 18px;">
-      <div style="font-size:12.5px;color:#c4b5fd;font-weight:600;">{{ track }}</div>
-      <div style="font-size:24px;font-weight:800;color:#fff;margin-top:4px;">{{ count }} <span style="font-size:13px;font-weight:500;color:var(--muted);">teams</span></div>
+    <div style="background:var(--card-sub);border:1px solid var(--card-border);border-radius:14px;padding:14px 18px;">
+      <div style="font-size:12.5px;color:var(--primary);font-weight:700;">{{ track }}</div>
+      <div style="font-size:24px;font-weight:800;color:var(--text-heading);margin-top:4px;">{{ count }} <span style="font-size:13px;font-weight:500;color:var(--muted);">teams</span></div>
     </div>
     {% endfor %}
   </div>
@@ -126,7 +126,7 @@
   {% else %}
   <div style="text-align:center;padding:36px;color:var(--muted);">
     <div style="font-size:36px;margin-bottom:8px;">🎉</div>
-    <h4 style="font-size:16px;color:#fff;">All Clear!</h4>
+    <h4 style="font-size:16px;color:var(--text-heading);">All Clear!</h4>
     <p style="font-size:13.5px;margin-top:4px;">No teams are currently awaiting payment verification.</p>
   </div>
   {% endif %}

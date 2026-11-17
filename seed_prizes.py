@@ -54,42 +54,32 @@ def init_prize_tables(db_path):
         if not row or row[0] == 0:
             # 1. prize_overview
             overview = [
-                ("total_pool", "₹2,50,000+"),
-                ("cash_pool", "₹2,00,000"),
-                ("perks_val", "₹50,000+ in Cloud Credits & Swag"),
+                ("total_pool", "₹50,000+"),
+                ("cash_pool", "₹50,000"),
+                ("perks_val", "Exciting Goodies, Cloud Credits & Swag"),
                 ("headline", "Compete for Glory, Cash & Career-Defining Opportunities"),
-                ("sub", "ACM CodeNite 2027 features a massive prize pool designed to reward technical depth, creative innovation, and tangible execution.")
+                ("sub", "ACM CodeNite 2027 features an exciting prize pool designed to reward technical depth, creative innovation, and tangible execution.")
             ]
             c.executemany("INSERT OR REPLACE INTO prize_overview(key, value) VALUES(?, ?)", overview)
 
             # 2. prize_podium
             podium = [
-                (1, "Grand Champion (1st Place)", "₹1,00,000", "🥇 1st Place", "ACM CodeNite Winner Trophy & Gold Medals", "#eab308", "linear-gradient(135deg,#fffbeb,#fef3c7)",
-                 "₹1,00,000 Direct Cash Award\nFast-track Direct Internship Interviews with Sponsor Companies\nACM CodeNite Grand Champion Trophy & Gold Medals\n₹50,000 AWS & Cloud Infrastructure Credits\nExclusive Winner Swag Kits & Framed Certificates of Grand Excellence", 1),
-                (2, "1st Runner-Up (2nd Place)", "₹60,000", "🥈 2nd Place", "Runner-Up Trophy & Silver Medals", "#94a3b8", "linear-gradient(135deg,#f8fafc,#f1f5f9)",
-                 "₹60,000 Direct Cash Award\nDirect Interviews for Paid Tech Internships\nOfficial Runner-Up Trophy & Silver Medals\n₹25,000 Cloud & Developer Tooling Credits\nPremium Runner-Up Swag Kits & Certificates of Excellence", 2),
-                (3, "2nd Runner-Up (3rd Place)", "₹30,000", "🥉 3rd Place", "2nd Runner-Up Trophy & Bronze Medals", "#d97706", "linear-gradient(135deg,#fffbeb,#fed7aa)",
-                 "₹30,000 Direct Cash Award\nCurated Career Mentorship & Network Access\nOfficial 2nd Runner-Up Trophy & Bronze Medals\n₹15,000 Cloud Tooling Credits\nOfficial Swag Box & Certificates of Excellence", 3)
+                (1, "Grand Champion (1st Place)", "₹25,000", "🥇 1st Place", "ACM CodeNite Winner Trophy & Gold Medals", "#eab308", "linear-gradient(135deg,#fffbeb,#fef3c7)",
+                 "₹25,000 Direct Cash Award\nFast-track Direct Internship Interviews with Sponsor Companies\nACM CodeNite Grand Champion Trophy & Gold Medals\nCloud Infrastructure Credits & Partner Perks\nExclusive Winner Swag Kits & Framed Certificates of Grand Excellence", 1),
+                (2, "1st Runner-Up (2nd Place)", "₹15,000", "🥈 2nd Place", "Runner-Up Trophy & Silver Medals", "#94a3b8", "linear-gradient(135deg,#f8fafc,#f1f5f9)",
+                 "₹15,000 Direct Cash Award\nDirect Interviews for Tech Opportunities\nOfficial Runner-Up Trophy & Silver Medals\nDeveloper Tooling Credits\nPremium Runner-Up Swag Kits & Certificates of Excellence", 2),
+                (3, "2nd Runner-Up (3rd Place)", "₹10,000", "🥉 3rd Place", "2nd Runner-Up Trophy & Bronze Medals", "#d97706", "linear-gradient(135deg,#fffbeb,#fed7aa)",
+                 "₹10,000 Direct Cash Award\nCurated Career Mentorship & Network Access\nOfficial 2nd Runner-Up Trophy & Bronze Medals\nDeveloper Tooling Credits\nOfficial Swag Box & Certificates of Excellence", 3)
             ]
             c.executemany("INSERT INTO prize_podium(rank, title, amount, badge, trophy, color_accent, gradient, perks, order_idx) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", podium)
 
-            # 3. prize_categories
-            categories = [
-                ("Best All-First-Year Team", "₹10,000", "Freshman Excellence", "Awarded to the top-scoring team composed entirely of 1st-year undergraduate students, accompanied by special campus incubator support.", "bolt", "#8b5cf6", 1),
-                ("Best AI / Machine Learning Innovation", "₹10,000", "Track Award", "Recognizing the most innovative deployment of foundation models, computer vision, or autonomous agent workflows.", "cpu", "#3b82f6", 2),
-                ("Best Web3 & Decentralized Platform", "₹10,000", "Track Award", "Awarded to the standout decentralized application showcasing novel smart contracts, zk-proofs, or verifiable credentials.", "lock", "#10b981", 3),
-                ("Women in Tech / All-Women Squad", "₹10,000", "Diversity in Tech", "Dedicated prize celebrating exceptional engineering leadership from all-women participant squads, backed by 1-on-1 industry mentorship.", "sparkles", "#ec4899", 4),
-                ("Best Social Impact & Civic Tech", "₹10,000", "Special Award", "Given to the project with the highest potential to create positive civic, environmental, or healthcare impact in rural or urban India.", "bulb", "#f59e0b", 5)
-            ]
-            c.executemany("INSERT INTO prize_categories(title, amount, tag, description, icon, color_accent, order_idx) VALUES(?, ?, ?, ?, ?, ?, ?)", categories)
-
-            # 4. prize_perks
+            # 3. prize_perks
             perks = [
                 ("Official ACM & MITS Certificates", "Nationally recognized verified Certificate of Participation for every attendee who builds and presents their solution.", "doc", 1),
                 ("Free Cloud Credits & Developer Perks", "Free cloud computing credits, API keys, and premium developer tools from hackathon partners and sponsors.", "globe", 2),
-                ("36-Hour Round-the-Clock Meals & Snacks", "Hot buffet breakfast, lunch, dinner, high tea, midnight pizza, energy drinks, and continuous tea/coffee bar.", "trophy", 3),
+                ("12-Hour Continuous Meals & Snacks", "Hot buffet breakfast, lunch, dinner, high tea, energy drinks, and continuous tea/coffee bar.", "trophy", 3),
                 ("Exclusive Swag & Merchandise", "CodeNite 2027 limited-edition T-shirts, premium laptop vinyl stickers, ID badges, and custom event lanyards.", "bolt", 4),
-                ("Live Industry Mentorship & Networking", "Direct guidance on the floor from senior architects, startup founders, and engineers throughout the 36-hour sprint.", "users", 5),
+                ("Live Industry Mentorship & Networking", "Direct guidance on the floor from senior architects, startup founders, and engineers throughout the 12-hour sprint.", "users", 5),
                 ("Internship & Recruitment Exposure", "Direct talent consideration and resume circulation to hiring managers and recruiters from partner companies.", "check", 6)
             ]
             c.executemany("INSERT INTO prize_perks(title, description, icon, order_idx) VALUES(?, ?, ?, ?)", perks)

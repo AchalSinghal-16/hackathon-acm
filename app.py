@@ -1,4 +1,5 @@
 import os, sqlite3, secrets, time
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, g, abort, Response
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -26,6 +27,148 @@ UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads", "payments")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 SUBMISSION_FOLDER = os.path.join(app.root_path, "static", "uploads", "submissions")
 os.makedirs(SUBMISSION_FOLDER, exist_ok=True)
+
+# ====================================================
+# INDIAN STANDARD TIME (IST, UTC+5:30) BACKEND ENGINE
+# ====================================================
+IST = timezone(timedelta(hours=5, minutes=30))
+
+def get_current_ist():
+    """Returns current datetime strictly in Indian Standard Time (server-computed)."""
+    return datetime.now(IST)
+
+def parse_ist_datetime(dt_str):
+    """Parses various datetime string representations into an IST-aware datetime object."""
+    if not dt_str:
+        return None
+    clean = str(dt_str).replace("T", " ").strip()
+    for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(clean, fmt).replace(tzinfo=IST)
+        except ValueError:
+            pass
+    return None
+
+def make_dt_string(year, month, day, hour, minute, ampm):
+    """Constructs a normalized YYYY-MM-DD HH:MM string from dropdown selections."""
+    try:
+        if not (year and month and day and hour and minute):
+            return None
+        h = int(hour)
+        m = int(minute)
+        ampm = (ampm or "AM").upper()
+        if ampm == "PM" and h < 12:
+            h += 12
+        elif ampm == "AM" and h == 12:
+            h = 0
+        return f"{int(year):04d}-{int(month):02d}-{int(day):02d} {h:02d}:{m:02d}"
+    except (ValueError, TypeError):
+        return None
+
+def split_dt_string(dt_str, default_hour="09", default_minute="00", default_ampm="AM"):
+    """Splits a YYYY-MM-DD HH:MM string into component dictionary for dropdown pre-selection."""
+    if not dt_str:
+        return {"year": "2027", "month": "01", "day": "17", "hour": default_hour, "minute": default_minute, "ampm": default_ampm}
+    try:
+        clean = str(dt_str).replace("T", " ").strip()
+        date_part, time_part = clean.split(" ")
+        y, m, d = date_part.split("-")
+        hh, mm = time_part.split(":")[:2]
+        hh_int = int(hh)
+        ampm = "AM"
+        if hh_int >= 12:
+            ampm = "PM"
+            if hh_int > 12:
+                hh_int -= 12
+        elif hh_int == 0:
+            hh_int = 12
+        return {
+            "year": f"{int(y):04d}",
+            "month": f"{int(m):02d}",
+            "day": f"{int(d):02d}",
+            "hour": f"{hh_int:02d}",
+            "minute": f"{int(mm):02d}",
+            "ampm": ampm
+        }
+    except Exception:
+        return {"year": "2027", "month": "01", "day": "17", "hour": default_hour, "minute": default_minute, "ampm": default_ampm}
+
+def evaluate_round_timing(round_dict, now_ist=None):
+    """
+    Evaluates whether a milestone submission round is currently open, upcoming, or closed
+    strictly against the current Indian Standard Time (IST) on the backend server.
+    """
+    if now_ist is None:
+        now_ist = datetime.now(IST)
+
+    start_dt = parse_ist_datetime(round_dict.get("start_time"))
+    end_dt = parse_ist_datetime(round_dict.get("end_time"))
+
+    is_open = True
+    is_upcoming = False
+    is_closed = False
+
+    if start_dt and end_dt:
+        if now_ist < start_dt:
+            is_upcoming = True
+            is_open = False
+            status_code = "upcoming"
+            status_badge = "⏳ Opens at " + start_dt.strftime("%d %b %Y, %I:%M %p IST")
+        elif now_ist > end_dt:
+            is_closed = True
+            is_open = False
+            status_code = "closed"
+            status_badge = "🔒 Closed at " + end_dt.strftime("%d %b %Y, %I:%M %p IST")
+        else:
+            is_open = True
+            status_code = "open"
+            status_badge = "🟢 Open Now (Closes " + end_dt.strftime("%I:%M %p IST") + ")"
+    elif start_dt:
+        if now_ist < start_dt:
+            is_upcoming = True
+            is_open = False
+            status_code = "upcoming"
+            status_badge = "⏳ Opens at " + start_dt.strftime("%d %b %Y, %I:%M %p IST")
+        else:
+            is_open = True
+            status_code = "open"
+            status_badge = "🟢 Open Now"
+    elif end_dt:
+        if now_ist > end_dt:
+            is_closed = True
+            is_open = False
+            status_code = "closed"
+            status_badge = "🔒 Closed at " + end_dt.strftime("%d %b %Y, %I:%M %p IST")
+        else:
+            is_open = True
+            status_code = "open"
+            status_badge = "🟢 Open Now"
+    else:
+        lbl = (round_dict.get("status_label") or "").lower()
+        if "upcom" in lbl:
+            is_upcoming = True
+            is_open = False
+            status_code = "upcoming"
+        elif "close" in lbl:
+            is_closed = True
+            is_open = False
+            status_code = "closed"
+        else:
+            is_open = True
+            status_code = "open"
+        status_badge = round_dict.get("status_label") or "Open Now"
+
+    return {
+        "is_open": is_open,
+        "is_upcoming": is_upcoming,
+        "is_closed": is_closed,
+        "status_code": status_code,
+        "status_badge": status_badge,
+        "start_formatted": start_dt.strftime("%d %b %Y, %I:%M %p IST") if start_dt else "",
+        "end_formatted": end_dt.strftime("%d %b %Y, %I:%M %p IST") if end_dt else "",
+        "start_iso": start_dt.strftime("%Y-%m-%d %H:%M") if start_dt else "",
+        "end_iso": end_dt.strftime("%Y-%m-%d %H:%M") if end_dt else "",
+    }
 
 def db():
     if "db" not in g:
@@ -285,14 +428,16 @@ def team():
 
         return render_template("team_success.html", team_id=tid, team_pw=tpw, team_name=team_name, body="inner")
 
-    return render_template("team_registration.html", body="inner")
+    tracks = db().execute("SELECT * FROM event_tracks ORDER BY order_idx ASC, id ASC").fetchall()
+    return render_template("team_registration.html", tracks=tracks, body="inner")
 
 @app.route("/dashboard")
 @login_required
 def dashboard():
     t = current_team()
     m = db().execute("SELECT * FROM members WHERE team=? ORDER BY is_leader DESC, id ASC", (t["id"],)).fetchall() if t else []
-    return render_template("dashboard.html", team=t, members=m, body="inner")
+    tracks = db().execute("SELECT * FROM event_tracks ORDER BY order_idx ASC, id ASC").fetchall()
+    return render_template("dashboard.html", team=t, members=m, tracks=tracks, body="inner")
 
 @app.route("/team/edit", methods=["POST"])
 @login_required
@@ -400,9 +545,18 @@ def events():
     judging = db().execute("SELECT * FROM event_judging ORDER BY order_idx, id").fetchall()
     rounds = db().execute("SELECT * FROM event_rounds ORDER BY order_idx, id").fetchall()
 
+    all_problems = db().execute("""
+        SELECT p.*, t.title as track_title
+        FROM event_problems p
+        LEFT JOIN event_tracks t ON t.id = p.track_id
+        ORDER BY t.order_idx, p.id
+    """).fetchall()
+
     t = current_team()
+    team_qualified_round = 1
     submissions = {}
     if t:
+        team_qualified_round = t["qualified_round"] if t["qualified_round"] else 1
         sub_rows = db().execute("SELECT * FROM team_submissions WHERE team_id=?", (t["id"],)).fetchall()
         submissions = {r["round_id"]: dict(r) for r in sub_rows}
 
@@ -418,16 +572,27 @@ def events():
     for r in rules:
         rules_by_category.setdefault(r["category"], []).append(r["rule_text"])
 
+    now_ist = get_current_ist()
+    rounds_processed = []
+    for r in rounds:
+        rd = dict(r)
+        rd["timing"] = evaluate_round_timing(rd, now_ist)
+        rd["is_qualified"] = (team_qualified_round >= rd["round_num"])
+        rounds_processed.append(rd)
+
     return render_template("events.html",
                            info=info,
                            schedule_by_day=schedule_by_day,
                            tracks=[dict(x) for x in tracks],
                            problems_by_track=problems_by_track,
+                           all_problems=[dict(p) for p in all_problems],
                            rules_by_category=rules_by_category,
                            judging=[dict(x) for x in judging],
-                           rounds=[dict(x) for x in rounds],
+                           rounds=rounds_processed,
+                           server_ist=now_ist.strftime("%d %b %Y, %I:%M %p IST"),
                            submissions=submissions,
                            team=t,
+                           team_qualified_round=team_qualified_round,
                            body="inner")
 
 @app.route("/events/submit/<int:round_id>", methods=["POST"])
@@ -441,37 +606,110 @@ def submit_round(round_id):
     if not round_data:
         abort(404)
 
+    # 1. Round 3 is strictly an offline evaluation round at MITS Campus (No online submissions accepted)
+    if round_data["submission_type"] == "offline_final" or round_data["round_num"] == 3:
+        flash("Round 3 is an offline evaluation stage conducted live at MITS Campus. No online submissions are required or accepted.")
+        return redirect(url_for("events"))
+
+    # 2. Team Qualification check
+    team_qualified_round = t["qualified_round"] or 1
+    if team_qualified_round < round_data["round_num"]:
+        flash(f"Your team is not yet shortlisted for {round_data['title']}. Round {round_data['round_num'] - 1} evaluation is required to advance.")
+        return redirect(url_for("events"))
+
+    # 3. Server-enforced IST submission window validation
+    now_ist = get_current_ist()
+    timing = evaluate_round_timing(dict(round_data), now_ist)
+    if timing["is_upcoming"]:
+        flash(f"Submissions for '{round_data['title']}' are locked and not open yet. The window opens on {timing['start_formatted']}.")
+        return redirect(url_for("events"))
+    if timing["is_closed"]:
+        flash(f"Submissions for '{round_data['title']}' have closed. The deadline was {timing['end_formatted']}.")
+        return redirect(url_for("events"))
+
+    existing = db().execute("SELECT * FROM team_submissions WHERE team_id=? AND round_id=?", (t["id"], round_id)).fetchone()
+
     project_title = request.form.get("project_title", "").strip()
     project_summary = request.form.get("project_summary", "").strip()
-    drive_link = request.form.get("drive_link", "").strip()
-    github_link = request.form.get("github_link", "").strip()
-    demo_link = request.form.get("demo_link", "").strip()
 
-    file_path = None
-    if "submission_file" in request.files:
-        file = request.files["submission_file"]
-        if file and file.filename:
-            ext = os.path.splitext(file.filename)[1].lower()
-            if ext not in (".pdf", ".ppt", ".pptx", ".zip", ".rar"):
-                flash("Allowed file types: .pdf, .ppt, .pptx, .zip, .rar")
-                return redirect(url_for("events"))
-            filename = f"team_{t['team_id']}_r{round_id}_{secrets.token_hex(4)}{ext}"
-            file.save(os.path.join(SUBMISSION_FOLDER, filename))
-            file_path = filename
+    # ROUND 1: PPT Presentation (.pdf compulsory), Problem Statement dropdown, Solution description & uniqueness
+    if round_data["round_num"] == 1 or round_data["submission_type"] == "ppt_deck":
+        problem_statement = request.form.get("problem_statement", "").strip()
+        uniqueness = request.form.get("uniqueness", "").strip()
+        drive_link = request.form.get("drive_link", "").strip()
 
-    existing = db().execute("SELECT id, file_path FROM team_submissions WHERE team_id=? AND round_id=?", (t["id"], round_id)).fetchone()
-    if existing:
-        saved_file = file_path if file_path else existing["file_path"]
-        db().execute("""
-            UPDATE team_submissions
-            SET project_title=?, project_summary=?, file_path=?, drive_link=?, github_link=?, demo_link=?, updated_at=CURRENT_TIMESTAMP, status='Submitted'
-            WHERE id=?
-        """, (project_title, project_summary, saved_file, drive_link, github_link, demo_link, existing["id"]))
-    else:
-        db().execute("""
-            INSERT INTO team_submissions(team_id, round_id, project_title, project_summary, file_path, drive_link, github_link, demo_link, status)
-            VALUES(?, ?, ?, ?, ?, ?, ?, ?, 'Submitted')
-        """, (t["id"], round_id, project_title, project_summary, file_path, drive_link, github_link, demo_link))
+        if not problem_statement:
+            flash("Please select your allocated Problem Statement from the dropdown.")
+            return redirect(url_for("events"))
+
+        file_path = None
+        if "submission_file" in request.files:
+            file = request.files["submission_file"]
+            if file and file.filename:
+                ext = os.path.splitext(file.filename)[1].lower()
+                if ext != ".pdf":
+                    flash("Compulsory Requirement: The project presentation must be in PDF format (.pdf only). PPT, PPTX or ZIP formats are not permitted.")
+                    return redirect(url_for("events"))
+                filename = f"team_{t['team_id']}_r1_deck_{secrets.token_hex(4)}.pdf"
+                file.save(os.path.join(SUBMISSION_FOLDER, filename))
+                file_path = filename
+
+        if not file_path and not (existing and existing["file_path"]):
+            flash("Project presentation in PDF format (.pdf) is compulsory. Please upload your presentation file.")
+            return redirect(url_for("events"))
+
+        saved_file = file_path if file_path else (existing["file_path"] if existing else None)
+
+        if existing:
+            db().execute("""
+                UPDATE team_submissions
+                SET project_title=?, project_summary=?, problem_statement=?, uniqueness=?, file_path=?, drive_link=?, updated_at=CURRENT_TIMESTAMP, status='Submitted'
+                WHERE id=?
+            """, (project_title, project_summary, problem_statement, uniqueness, saved_file, drive_link, existing["id"]))
+        else:
+            db().execute("""
+                INSERT INTO team_submissions(team_id, round_id, project_title, project_summary, problem_statement, uniqueness, file_path, drive_link, status)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, 'Submitted')
+            """, (t["id"], round_id, project_title, project_summary, problem_statement, uniqueness, saved_file, drive_link))
+
+    # ROUND 2: Mandatory GitHub repo link, optional live deployment link, 2-5 min demo video URL, README setup & execution instructions
+    elif round_data["round_num"] == 2 or round_data["submission_type"] == "prototype":
+        github_link = request.form.get("github_link", "").strip()
+        if not github_link:
+            flash("Public GitHub Repository URL is mandatory for Round 2 prototype submission.")
+            return redirect(url_for("events"))
+
+        demo_link = request.form.get("demo_link", "").strip() # live deployment URL
+        drive_link = request.form.get("drive_link", "").strip() # 2 to 5 min demo video URL
+        readme_text = request.form.get("readme_text", "").strip() # setup and execution instructions text
+
+        if not drive_link:
+            flash("Demo video URL (2 to 5 minutes) is required for Round 2.")
+            return redirect(url_for("events"))
+
+        readme_file = None
+        if "readme_file" in request.files:
+            rfile = request.files["readme_file"]
+            if rfile and rfile.filename:
+                ext = os.path.splitext(rfile.filename)[1].lower()
+                if ext in (".md", ".txt", ".pdf"):
+                    rfilename = f"team_{t['team_id']}_r2_readme_{secrets.token_hex(4)}{ext}"
+                    rfile.save(os.path.join(SUBMISSION_FOLDER, rfilename))
+                    readme_file = rfilename
+
+        saved_readme = readme_file if readme_file else (existing["readme_file"] if existing else None)
+
+        if existing:
+            db().execute("""
+                UPDATE team_submissions
+                SET project_title=?, project_summary=?, github_link=?, demo_link=?, drive_link=?, readme_file=?, readme_text=?, updated_at=CURRENT_TIMESTAMP, status='Submitted'
+                WHERE id=?
+            """, (project_title, project_summary, github_link, demo_link, drive_link, saved_readme, readme_text, existing["id"]))
+        else:
+            db().execute("""
+                INSERT INTO team_submissions(team_id, round_id, project_title, project_summary, github_link, demo_link, drive_link, readme_file, readme_text, status)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, 'Submitted')
+            """, (t["id"], round_id, project_title, project_summary, github_link, demo_link, drive_link, saved_readme, readme_text))
 
     db().commit()
     flash(f"Submission for {round_data['title']} saved successfully!")
@@ -487,7 +725,6 @@ def prizes():
         d = dict(r)
         d["perks_list"] = [p.strip() for p in (r["perks"] or "").split("\n") if p.strip()]
         podium.append(d)
-    categories = db().execute("SELECT * FROM prize_categories ORDER BY order_idx, id").fetchall()
     perks = db().execute("SELECT * FROM prize_perks ORDER BY order_idx, id").fetchall()
     rules = db().execute("SELECT * FROM prize_rules ORDER BY order_idx, id").fetchall()
 
@@ -495,7 +732,6 @@ def prizes():
     return render_template("prizes.html",
                            overview=overview,
                            podium=podium,
-                           categories=[dict(x) for x in categories],
                            perks=[dict(x) for x in perks],
                            rules=[dict(x) for x in rules],
                            team=t,
@@ -506,12 +742,10 @@ def about():
     about_rows = db().execute("SELECT key, value FROM about_info").fetchall()
     info = {r["key"]: r["value"] for r in about_rows}
     pillars = db().execute("SELECT * FROM about_pillars ORDER BY order_idx, id").fetchall()
-    facilities = db().execute("SELECT * FROM about_facilities ORDER BY order_idx, id").fetchall()
     t = current_team()
     return render_template("about.html",
                            info=info,
                            pillars=[dict(x) for x in pillars],
-                           facilities=[dict(x) for x in facilities],
                            team=t,
                            body="inner")
 
@@ -760,9 +994,11 @@ def admin_submissions():
     
     sql = """
         SELECT s.*, 
+               t.id as team_pk,
                t.team_id as team_code,
                t.name as team_name,
                t.domain,
+               t.qualified_round as team_qualified_round,
                r.round_num,
                r.title as round_title,
                r.stage_name
@@ -779,6 +1015,13 @@ def admin_submissions():
     sql += " ORDER BY s.submitted_at DESC"
     submissions = db().execute(sql, params).fetchall()
     total_submissions = db().execute("SELECT count(*) FROM team_submissions").fetchone()[0]
+
+    # Metrics for round progression
+    r1_subs_count = db().execute("SELECT count(*) FROM team_submissions s JOIN event_rounds r ON r.id=s.round_id WHERE r.round_num=1").fetchone()[0]
+    r2_subs_count = db().execute("SELECT count(*) FROM team_submissions s JOIN event_rounds r ON r.id=s.round_id WHERE r.round_num=2").fetchone()[0]
+    r2_qualified_count = db().execute("SELECT count(*) FROM teams WHERE qualified_round >= 2").fetchone()[0]
+    r3_qualified_count = db().execute("SELECT count(*) FROM teams WHERE qualified_round >= 3").fetchone()[0]
+    total_teams_count = db().execute("SELECT count(*) FROM teams").fetchone()[0]
     
     return render_template(
         "admin_submissions.html",
@@ -788,7 +1031,12 @@ def admin_submissions():
         submissions=submissions,
         rounds=rounds,
         current_round=round_filter,
-        total_submissions=total_submissions
+        total_submissions=total_submissions,
+        r1_subs_count=r1_subs_count,
+        r2_subs_count=r2_subs_count,
+        r2_qualified_count=r2_qualified_count,
+        r3_qualified_count=r3_qualified_count,
+        total_teams_count=total_teams_count
     )
 
 @app.route(f"/{ADMIN_SECRET_SLUG}/submissions/<int:sub_id>/evaluate", methods=["POST"])
@@ -796,24 +1044,110 @@ def admin_submissions():
 def admin_evaluate_submission(sub_id):
     new_status = request.form.get("status", "Submitted")
     remarks = request.form.get("remarks", "").strip()
+    target_round = request.form.get("qualified_round")
+    
+    sub = db().execute("SELECT team_id, round_id FROM team_submissions WHERE id=?", (sub_id,)).fetchone()
+    if sub and target_round and target_round.isdigit():
+        db().execute("UPDATE teams SET qualified_round=? WHERE id=?", (int(target_round), sub["team_id"]))
+    elif sub and new_status == "Shortlisted":
+        rnd = db().execute("SELECT round_num FROM event_rounds WHERE id=?", (sub["round_id"],)).fetchone()
+        if rnd and rnd["round_num"] == 1:
+            db().execute("UPDATE teams SET qualified_round = MAX(qualified_round, 2) WHERE id=?", (sub["team_id"],))
+        elif rnd and rnd["round_num"] == 2:
+            db().execute("UPDATE teams SET qualified_round = MAX(qualified_round, 3) WHERE id=?", (sub["team_id"],))
+
     db().execute("UPDATE team_submissions SET status=?, remarks=?, updated_at=CURRENT_TIMESTAMP WHERE id=?", (new_status, remarks, sub_id))
     db().commit()
     log_admin_action(db(), session.get("admin_user"), "EVALUATE_SUBMISSION", "SUBMISSION", sub_id, f"Set status to {new_status}")
-    flash(f"Submission #{sub_id} evaluation updated successfully.")
-    return redirect(f"/{ADMIN_SECRET_SLUG}/submissions")
+    flash(f"Submission #{sub_id} evaluation and team advancement updated.")
+    return redirect(request.referrer or f"/{ADMIN_SECRET_SLUG}/submissions")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/teams/<int:team_id>/set-round", methods=["POST"])
+@admin_required
+def admin_set_team_round(team_id):
+    target_round = int(request.form.get("qualified_round", 1))
+    db().execute("UPDATE teams SET qualified_round=? WHERE id=?", (target_round, team_id))
+    db().commit()
+    team_row = db().execute("SELECT name, team_id FROM teams WHERE id=?", (team_id,)).fetchone()
+    t_name = team_row["name"] if team_row else f"Team #{team_id}"
+    log_admin_action(db(), session.get("admin_user"), "SET_TEAM_ROUND", "TEAM", team_id, f"Set to Round {target_round}")
+    flash(f"Team '{t_name}' is now at Stage: Round {target_round}.")
+    return redirect(request.referrer or f"/{ADMIN_SECRET_SLUG}/submissions")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/teams/batch-advance", methods=["POST"])
+@admin_required
+def admin_batch_advance_teams():
+    target_round = int(request.form.get("target_round", 2))
+    team_ids = request.form.getlist("team_ids")
+    top_n = request.form.get("top_n", "").strip()
+
+    if top_n.isdigit() and int(top_n) > 0:
+        n = int(top_n)
+        source_round = target_round - 1
+        rows = db().execute("""
+            SELECT DISTINCT t.id 
+            FROM teams t
+            JOIN team_submissions s ON s.team_id = t.id
+            JOIN event_rounds r ON r.id = s.round_id
+            WHERE r.round_num = ?
+            ORDER BY s.submitted_at ASC
+            LIMIT ?
+        """, (source_round, n)).fetchall()
+        team_ids = [str(r["id"]) for r in rows]
+
+    if not team_ids:
+        flash("Please select at least one team or specify a valid count for promotion.")
+        return redirect(request.referrer or f"/{ADMIN_SECRET_SLUG}/submissions")
+
+    for tid in team_ids:
+        db().execute("UPDATE teams SET qualified_round=? WHERE id=?", (target_round, int(tid)))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "BATCH_ADVANCE_TEAMS", "TEAMS", len(team_ids), f"Promoted {len(team_ids)} teams to Round {target_round}")
+    flash(f"Successfully promoted {len(team_ids)} teams to Round {target_round}!")
+    return redirect(request.referrer or f"/{ADMIN_SECRET_SLUG}/submissions")
 
 @app.route(f"/{ADMIN_SECRET_SLUG}/content")
 @admin_required
 def admin_content():
     pending_payments = db().execute("SELECT count(*) FROM teams WHERE payment_status='Pending Verification'").fetchone()[0]
     
+    # 1. Event Data
     event_info_rows = db().execute("SELECT key, value FROM event_info").fetchall()
     event_info = {r["key"]: r["value"] for r in event_info_rows}
+    schedule = db().execute("SELECT * FROM event_schedule ORDER BY order_idx ASC, id ASC").fetchall()
+    tracks = db().execute("SELECT * FROM event_tracks ORDER BY order_idx ASC, id ASC").fetchall()
+    problems = db().execute("""
+        SELECT p.*, t.title as track_title 
+        FROM event_problems p
+        LEFT JOIN event_tracks t ON t.id = p.track_id
+        ORDER BY p.id ASC
+    """).fetchall()
+    rules = db().execute("SELECT * FROM event_rules ORDER BY order_idx ASC, id ASC").fetchall()
+    judging = db().execute("SELECT * FROM event_judging ORDER BY order_idx ASC, id ASC").fetchall()
+    rounds = db().execute("SELECT * FROM event_rounds ORDER BY round_num ASC, id ASC").fetchall()
+    now_ist = get_current_ist()
+    rounds_processed = []
+    for r in rounds:
+        rd = dict(r)
+        rd["timing"] = evaluate_round_timing(rd, now_ist)
+        rd["start_parts"] = split_dt_string(rd.get("start_time"), default_hour="09", default_minute="30", default_ampm="AM")
+        rd["end_parts"] = split_dt_string(rd.get("end_time"), default_hour="11", default_minute="30", default_ampm="AM")
+        rounds_processed.append(rd)
     
+    # 2. Prize Data
     prize_ov_rows = db().execute("SELECT key, value FROM prize_overview").fetchall()
     prize_overview = {r["key"]: r["value"] for r in prize_ov_rows}
-    podium = db().execute("SELECT * FROM prize_podium ORDER BY order_idx ASC").fetchall()
+    podium = db().execute("SELECT * FROM prize_podium ORDER BY rank ASC, id ASC").fetchall()
+    prize_perks = db().execute("SELECT * FROM prize_perks ORDER BY order_idx ASC, id ASC").fetchall()
+    prize_rules = db().execute("SELECT * FROM prize_rules ORDER BY order_idx ASC, id ASC").fetchall()
     
+    # 3. About Data
+    about_info_rows = db().execute("SELECT key, value FROM about_info").fetchall()
+    about_info = {r["key"]: r["value"] for r in about_info_rows}
+    about_pillars = db().execute("SELECT * FROM about_pillars ORDER BY order_idx ASC, id ASC").fetchall()
+    
+    # 4. FAQ Data
+    faq_categories = db().execute("SELECT * FROM faq_categories ORDER BY order_idx ASC, id ASC").fetchall()
     faqs = db().execute("SELECT * FROM faq_items ORDER BY order_idx ASC, id ASC").fetchall()
     
     return render_template(
@@ -821,45 +1155,587 @@ def admin_content():
         slug=ADMIN_SECRET_SLUG,
         active_tab="content",
         pending_payments_count=pending_payments,
+        # Event
         event_info=event_info,
+        schedule=schedule,
+        tracks=tracks,
+        problems=problems,
+        rules=rules,
+        judging=judging,
+        rounds=rounds_processed,
+        server_ist=now_ist.strftime("%d %b %Y, %I:%M %p IST"),
+        now_parts=split_dt_string(now_ist.strftime("%Y-%m-%d %H:%M")),
+        # Prize
         prize_overview=prize_overview,
         podium=podium,
+        prize_perks=prize_perks,
+        prize_rules=prize_rules,
+        # About
+        about_info=about_info,
+        about_pillars=about_pillars,
+        # FAQ
+        faq_categories=faq_categories,
         faqs=faqs
     )
+
+# ====================
+# EVENT CMS ACTIONS
+# ====================
 
 @app.route(f"/{ADMIN_SECRET_SLUG}/content/event-info", methods=["POST"])
 @admin_required
 def admin_save_event_info():
-    keys = ["tagline", "dates", "venue", "prize_pool", "team_size", "mode", "about_p1"]
+    keys = ["tagline", "dates", "venue", "duration", "prize_pool", "team_size", "mode", "about_p1", "about_p2"]
     for k in keys:
         if k in request.form:
             val = request.form.get(k, "").strip()
             db().execute("INSERT OR REPLACE INTO event_info(key, value) VALUES(?, ?)", (k, val))
     db().commit()
     log_admin_action(db(), session.get("admin_user"), "UPDATE_CONTENT", "EVENT_INFO", "0")
-    flash("Event details saved and updated live on the site.")
-    return redirect(f"/{ADMIN_SECRET_SLUG}/content")
+    flash("Event metadata saved and updated live on the site.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
 
-@app.route(f"/{ADMIN_SECRET_SLUG}/content/prizes", methods=["POST"])
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/schedule/add", methods=["POST"])
 @admin_required
-def admin_save_prizes():
-    keys = ["total_pool", "cash_pool", "perks_val"]
+def admin_add_schedule():
+    f = request.form
+    day = f.get("day_title", "January 17, 2027 · Sunday").strip()
+    slot = f.get("time_slot", "").strip()
+    title = f.get("title", "").strip()
+    desc = f.get("description", "").strip()
+    badge = f.get("badge", "Activity").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    if title and slot:
+        db().execute("INSERT INTO event_schedule(day_title, time_slot, title, description, badge, order_idx) VALUES(?,?,?,?,?,?)",
+                     (day, slot, title, desc, badge, order))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_SCHEDULE", "SCHEDULE", "0", title)
+        flash(f"Schedule slot '{title}' added successfully.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/schedule/edit/<int:item_id>", methods=["POST"])
+@admin_required
+def admin_edit_schedule(item_id):
+    f = request.form
+    day = f.get("day_title", "").strip()
+    slot = f.get("time_slot", "").strip()
+    title = f.get("title", "").strip()
+    desc = f.get("description", "").strip()
+    badge = f.get("badge", "").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    db().execute("UPDATE event_schedule SET day_title=?, time_slot=?, title=?, description=?, badge=?, order_idx=? WHERE id=?",
+                 (day, slot, title, desc, badge, order, item_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_SCHEDULE", "SCHEDULE", item_id, title)
+    flash(f"Schedule slot '{title}' updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/schedule/delete/<int:item_id>", methods=["POST"])
+@admin_required
+def admin_delete_schedule(item_id):
+    db().execute("DELETE FROM event_schedule WHERE id=?", (item_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_SCHEDULE", "SCHEDULE", item_id)
+    flash("Schedule slot deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/tracks/add", methods=["POST"])
+@admin_required
+def admin_add_track():
+    f = request.form
+    title = f.get("title", "").strip()
+    tagline = f.get("tagline", "").strip()
+    desc = f.get("description", "").strip()
+    icon = f.get("icon", "bulb").strip()
+    color = f.get("color_accent", "#8b5cf6").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    if title:
+        db().execute("INSERT INTO event_tracks(title, tagline, description, icon, color_accent, order_idx) VALUES(?,?,?,?,?,?)",
+                     (title, tagline, desc, icon, color, order))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_TRACK", "TRACK", "0", title)
+        flash(f"Track '{title}' added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/tracks/edit/<int:track_id>", methods=["POST"])
+@admin_required
+def admin_edit_track(track_id):
+    f = request.form
+    title = f.get("title", "").strip()
+    tagline = f.get("tagline", "").strip()
+    desc = f.get("description", "").strip()
+    icon = f.get("icon", "bulb").strip()
+    color = f.get("color_accent", "#8b5cf6").strip()
+    order = int(f.get("order_idx", 99) or 99)
+
+    old_row = db().execute("SELECT title FROM event_tracks WHERE id=?", (track_id,)).fetchone()
+    old_title = old_row["title"] if old_row else ""
+
+    db().execute("UPDATE event_tracks SET title=?, tagline=?, description=?, icon=?, color_accent=?, order_idx=? WHERE id=?",
+                 (title, tagline, desc, icon, color, order, track_id))
+
+    if old_title and title and old_title != title:
+        db().execute("UPDATE teams SET domain=? WHERE domain=?", (title, old_title))
+
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_TRACK", "TRACK", track_id, title)
+    flash(f"Track '{title}' updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/tracks/delete/<int:track_id>", methods=["POST"])
+@admin_required
+def admin_delete_track(track_id):
+    db().execute("DELETE FROM event_tracks WHERE id=?", (track_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_TRACK", "TRACK", track_id)
+    flash("Track deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/problems/add", methods=["POST"])
+@admin_required
+def admin_add_problem():
+    f = request.form
+    track_id = int(f.get("track_id", 1) or 1)
+    code = f.get("code", "").strip()
+    title = f.get("title", "").strip()
+    desc = f.get("description", "").strip()
+    pdf_url = f.get("pdf_url", "#").strip()
+    if title and code:
+        db().execute("INSERT INTO event_problems(track_id, code, title, description, pdf_url) VALUES(?,?,?,?,?)",
+                     (track_id, code, title, desc, pdf_url))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_PROBLEM", "PROBLEM", "0", title)
+        flash(f"Problem statement '{code}: {title}' added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/problems/edit/<int:prob_id>", methods=["POST"])
+@admin_required
+def admin_edit_problem(prob_id):
+    f = request.form
+    track_id = int(f.get("track_id", 1) or 1)
+    code = f.get("code", "").strip()
+    title = f.get("title", "").strip()
+    desc = f.get("description", "").strip()
+    pdf_url = f.get("pdf_url", "#").strip()
+    db().execute("UPDATE event_problems SET track_id=?, code=?, title=?, description=?, pdf_url=? WHERE id=?",
+                 (track_id, code, title, desc, pdf_url, prob_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_PROBLEM", "PROBLEM", prob_id, title)
+    flash(f"Problem statement '{code}' updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/problems/delete/<int:prob_id>", methods=["POST"])
+@admin_required
+def admin_delete_problem(prob_id):
+    db().execute("DELETE FROM event_problems WHERE id=?", (prob_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_PROBLEM", "PROBLEM", prob_id)
+    flash("Problem statement deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/rules/add", methods=["POST"])
+@admin_required
+def admin_add_rule():
+    f = request.form
+    cat = f.get("category", "General").strip()
+    text = f.get("rule_text", "").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    if text:
+        db().execute("INSERT INTO event_rules(category, rule_text, order_idx) VALUES(?,?,?)", (cat, text, order))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_RULE", "RULE", "0", cat)
+        flash("Rule added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/rules/edit/<int:rule_id>", methods=["POST"])
+@admin_required
+def admin_edit_rule(rule_id):
+    f = request.form
+    cat = f.get("category", "").strip()
+    text = f.get("rule_text", "").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    db().execute("UPDATE event_rules SET category=?, rule_text=?, order_idx=? WHERE id=?", (cat, text, order, rule_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_RULE", "RULE", rule_id, cat)
+    flash("Rule updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/rules/delete/<int:rule_id>", methods=["POST"])
+@admin_required
+def admin_delete_rule(rule_id):
+    db().execute("DELETE FROM event_rules WHERE id=?", (rule_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_RULE", "RULE", rule_id)
+    flash("Rule deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/judging/add", methods=["POST"])
+@admin_required
+def admin_add_judging():
+    f = request.form
+    crit = f.get("criterion", "").strip()
+    weight = f.get("weightage", "").strip()
+    desc = f.get("description", "").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    if crit:
+        db().execute("INSERT INTO event_judging(criterion, weightage, description, order_idx) VALUES(?,?,?,?)",
+                     (crit, weight, desc, order))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_JUDGING", "JUDGING", "0", crit)
+        flash("Judging criterion added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/judging/edit/<int:judge_id>", methods=["POST"])
+@admin_required
+def admin_edit_judging(judge_id):
+    f = request.form
+    crit = f.get("criterion", "").strip()
+    weight = f.get("weightage", "").strip()
+    desc = f.get("description", "").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    db().execute("UPDATE event_judging SET criterion=?, weightage=?, description=?, order_idx=? WHERE id=?",
+                 (crit, weight, desc, order, judge_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_JUDGING", "JUDGING", judge_id, crit)
+    flash("Judging criterion updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/judging/delete/<int:judge_id>", methods=["POST"])
+@admin_required
+def admin_delete_judging(judge_id):
+    db().execute("DELETE FROM event_judging WHERE id=?", (judge_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_JUDGING", "JUDGING", judge_id)
+    flash("Judging criterion deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/rounds/add", methods=["POST"])
+@admin_required
+def admin_add_round():
+    f = request.form
+    title = f.get("title", "").strip()
+    stage = f.get("stage_name", "").strip()
+    sub_type = f.get("submission_type", "deck").strip()
+    desc = f.get("description", "").strip()
+    round_num_val = f.get("round_num", "").strip()
+    
+    start_time = make_dt_string(
+        f.get("start_year"), f.get("start_month"), f.get("start_day"),
+        f.get("start_hour"), f.get("start_minute"), f.get("start_ampm")
+    )
+    end_time = make_dt_string(
+        f.get("end_year"), f.get("end_month"), f.get("end_day"),
+        f.get("end_hour"), f.get("end_minute"), f.get("end_ampm")
+    )
+    
+    if round_num_val.isdigit():
+        round_num = int(round_num_val)
+    else:
+        max_r = db().execute("SELECT MAX(round_num) FROM event_rounds").fetchone()
+        round_num = (max_r[0] or 0) + 1
+
+    max_order = db().execute("SELECT MAX(order_idx) FROM event_rounds").fetchone()
+    order_idx = (max_order[0] or 0) + 1
+
+    end_dt = parse_ist_datetime(end_time)
+    deadline = end_dt.strftime("%B %d, %Y · %I:%M %p IST") if end_dt else "TBD"
+
+    now_ist = get_current_ist()
+    timing = evaluate_round_timing({"start_time": start_time, "end_time": end_time}, now_ist)
+    status_label = "Open Now" if timing["is_open"] else ("Upcoming" if timing["is_upcoming"] else "Closed")
+
+    db().execute("""
+        INSERT INTO event_rounds(round_num, title, stage_name, deadline, status_label, description, submission_type, start_time, end_time, order_idx)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (round_num, title, stage, deadline, status_label, desc, sub_type, start_time, end_time, order_idx))
+    db().commit()
+    new_id = db().execute("SELECT last_insert_rowid()").fetchone()[0]
+    log_admin_action(db(), session.get("admin_user"), "ADD_ROUND", "ROUND", new_id, title)
+    flash(f"Milestone '{title}' added successfully.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/rounds/edit/<int:round_id>", methods=["POST"])
+@admin_required
+def admin_edit_round(round_id):
+    f = request.form
+    title = f.get("title", "").strip()
+    stage = f.get("stage_name", "").strip()
+    sub_type = f.get("submission_type", "deck").strip()
+    desc = f.get("description", "").strip()
+    round_num_val = f.get("round_num", "").strip()
+    
+    start_time = make_dt_string(
+        f.get("start_year"), f.get("start_month"), f.get("start_day"),
+        f.get("start_hour"), f.get("start_minute"), f.get("start_ampm")
+    )
+    end_time = make_dt_string(
+        f.get("end_year"), f.get("end_month"), f.get("end_day"),
+        f.get("end_hour"), f.get("end_minute"), f.get("end_ampm")
+    )
+
+    if not start_time and f.get("start_time"):
+        start_time = f.get("start_time").strip()
+    if not end_time and f.get("end_time"):
+        end_time = f.get("end_time").strip()
+
+    end_dt = parse_ist_datetime(end_time)
+    deadline = end_dt.strftime("%B %d, %Y · %I:%M %p IST") if end_dt else f.get("deadline", "TBD").strip()
+
+    now_ist = get_current_ist()
+    timing = evaluate_round_timing({"start_time": start_time, "end_time": end_time}, now_ist)
+    status_label = "Open Now" if timing["is_open"] else ("Upcoming" if timing["is_upcoming"] else "Closed")
+
+    sql = """
+        UPDATE event_rounds
+        SET title=?, stage_name=?, deadline=?, status_label=?, description=?, submission_type=?, start_time=?, end_time=?
+    """
+    params = [title, stage, deadline, status_label, desc, sub_type, start_time, end_time]
+    if round_num_val.isdigit():
+        sql += ", round_num=?"
+        params.append(int(round_num_val))
+    sql += " WHERE id=?"
+    params.append(round_id)
+
+    db().execute(sql, params)
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_ROUND", "ROUND", round_id, title)
+    flash(f"Milestone '{title}' updated successfully.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/rounds/delete/<int:round_id>", methods=["POST"])
+@admin_required
+def admin_delete_round(round_id):
+    rnd = db().execute("SELECT title FROM event_rounds WHERE id=?", (round_id,)).fetchone()
+    title = rnd["title"] if rnd else f"#{round_id}"
+    db().execute("DELETE FROM team_submissions WHERE round_id=?", (round_id,))
+    db().execute("DELETE FROM event_rounds WHERE id=?", (round_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_ROUND", "ROUND", round_id, title)
+    flash(f"Milestone '{title}' deleted successfully.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
+
+# ====================
+# PRIZES CMS ACTIONS
+# ====================
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/prizes/overview", methods=["POST"])
+@admin_required
+def admin_save_prizes_overview():
+    keys = ["total_pool", "cash_pool", "perks_val", "headline", "sub"]
     for k in keys:
         if k in request.form:
             val = request.form.get(k, "").strip()
             db().execute("INSERT OR REPLACE INTO prize_overview(key, value) VALUES(?, ?)", (k, val))
-    
-    podium_rows = db().execute("SELECT id FROM prize_podium").fetchall()
-    for p in podium_rows:
-        f_key = f"podium_{p['id']}"
-        if f_key in request.form:
-            val = request.form.get(f_key, "").strip()
-            db().execute("UPDATE prize_podium SET amount=? WHERE id=?", (val, p["id"]))
-            
     db().commit()
-    log_admin_action(db(), session.get("admin_user"), "UPDATE_CONTENT", "PRIZES", "0")
-    flash("Prize pool amounts saved and updated live on /prizes.")
-    return redirect(f"/{ADMIN_SECRET_SLUG}/content")
+    log_admin_action(db(), session.get("admin_user"), "UPDATE_CONTENT", "PRIZE_OVERVIEW", "0")
+    flash("Prize overview headline and pool figures saved.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/podium/add", methods=["POST"])
+@admin_required
+def admin_add_podium():
+    f = request.form
+    rank = int(f.get("rank", 1) or 1)
+    title = f.get("title", "").strip()
+    amount = f.get("amount", "").strip()
+    badge = f.get("badge", "").strip()
+    trophy = f.get("trophy", "").strip()
+    color = f.get("color_accent", "#eab308").strip()
+    perks = f.get("perks", "").strip()
+    if title and amount:
+        db().execute("INSERT INTO prize_podium(rank, title, amount, badge, trophy, color_accent, perks, order_idx) VALUES(?,?,?,?,?,?,?,?)",
+                     (rank, title, amount, badge, trophy, color, perks, rank))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_PODIUM", "PODIUM", "0", title)
+        flash(f"Podium tier '{title}' added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/podium/edit/<int:pod_id>", methods=["POST"])
+@admin_required
+def admin_edit_podium(pod_id):
+    f = request.form
+    rank = int(f.get("rank", 1) or 1)
+    title = f.get("title", "").strip()
+    amount = f.get("amount", "").strip()
+    badge = f.get("badge", "").strip()
+    trophy = f.get("trophy", "").strip()
+    color = f.get("color_accent", "#eab308").strip()
+    perks = f.get("perks", "").strip()
+    db().execute("UPDATE prize_podium SET rank=?, title=?, amount=?, badge=?, trophy=?, color_accent=?, perks=? WHERE id=?",
+                 (rank, title, amount, badge, trophy, color, perks, pod_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_PODIUM", "PODIUM", pod_id, title)
+    flash(f"Podium place '{title}' updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/podium/delete/<int:pod_id>", methods=["POST"])
+@admin_required
+def admin_delete_podium(pod_id):
+    db().execute("DELETE FROM prize_podium WHERE id=?", (pod_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_PODIUM", "PODIUM", pod_id)
+    flash("Podium entry deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/prize-perks/add", methods=["POST"])
+@admin_required
+def admin_add_prize_perk():
+    f = request.form
+    title = f.get("title", "").strip()
+    desc = f.get("description", "").strip()
+    icon = f.get("icon", "trophy").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    if title:
+        db().execute("INSERT INTO prize_perks(title, description, icon, order_idx) VALUES(?,?,?,?)",
+                     (title, desc, icon, order))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_PERK", "PERK", "0", title)
+        flash(f"Participant perk '{title}' added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/prize-perks/edit/<int:perk_id>", methods=["POST"])
+@admin_required
+def admin_edit_prize_perk(perk_id):
+    f = request.form
+    title = f.get("title", "").strip()
+    desc = f.get("description", "").strip()
+    icon = f.get("icon", "trophy").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    db().execute("UPDATE prize_perks SET title=?, description=?, icon=?, order_idx=? WHERE id=?",
+                 (title, desc, icon, order, perk_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_PERK", "PERK", perk_id, title)
+    flash(f"Perk '{title}' updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/prize-perks/delete/<int:perk_id>", methods=["POST"])
+@admin_required
+def admin_delete_prize_perk(perk_id):
+    db().execute("DELETE FROM prize_perks WHERE id=?", (perk_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_PERK", "PERK", perk_id)
+    flash("Perk deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/prize-rules/add", methods=["POST"])
+@admin_required
+def admin_add_prize_rule():
+    text = request.form.get("rule_text", "").strip()
+    order = int(request.form.get("order_idx", 99) or 99)
+    if text:
+        db().execute("INSERT INTO prize_rules(rule_text, order_idx) VALUES(?,?)", (text, order))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_PRIZE_RULE", "PRIZE_RULE", "0")
+        flash("Disbursement rule added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/prize-rules/edit/<int:rule_id>", methods=["POST"])
+@admin_required
+def admin_edit_prize_rule(rule_id):
+    text = request.form.get("rule_text", "").strip()
+    order = int(request.form.get("order_idx", 99) or 99)
+    db().execute("UPDATE prize_rules SET rule_text=?, order_idx=? WHERE id=?", (text, order, rule_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_PRIZE_RULE", "PRIZE_RULE", rule_id)
+    flash("Disbursement rule updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/prize-rules/delete/<int:rule_id>", methods=["POST"])
+@admin_required
+def admin_delete_prize_rule(rule_id):
+    db().execute("DELETE FROM prize_rules WHERE id=?", (rule_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_PRIZE_RULE", "PRIZE_RULE", rule_id)
+    flash("Disbursement rule deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-prizes")
+
+# ====================
+# ABOUT CMS ACTIONS
+# ====================
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/about/info", methods=["POST"])
+@admin_required
+def admin_save_about_info():
+    keys = [
+        "acm_section_title", "acm_badge", "acm_sub", "acm_desc_p1", "acm_desc_p2",
+        "acm_chapter_title", "acm_chapter_desc", "acm_highlight",
+        "headline", "subheadline", "mission_p1", "mission_p2", "institute_name", "chapter_name",
+        "stat_hours", "stat_prize", "stat_teams", "stat_mentors"
+    ]
+    for k in keys:
+        if k in request.form:
+            val = request.form.get(k, "").strip()
+            db().execute("INSERT OR REPLACE INTO about_info(key, value) VALUES(?, ?)", (k, val))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "UPDATE_CONTENT", "ABOUT_INFO", "0")
+    flash("About page & ACM section information updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-about")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/pillars/add", methods=["POST"])
+@admin_required
+def admin_add_pillar():
+    f = request.form
+    title = f.get("title", "").strip()
+    desc = f.get("description", "").strip()
+    icon = f.get("icon", "bolt").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    if title:
+        db().execute("INSERT INTO about_pillars(title, description, icon, order_idx) VALUES(?,?,?,?)",
+                     (title, desc, icon, order))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_PILLAR", "PILLAR", "0", title)
+        flash(f"Pillar '{title}' added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-about")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/pillars/edit/<int:pillar_id>", methods=["POST"])
+@admin_required
+def admin_edit_pillar(pillar_id):
+    f = request.form
+    title = f.get("title", "").strip()
+    desc = f.get("description", "").strip()
+    icon = f.get("icon", "bolt").strip()
+    order = int(f.get("order_idx", 99) or 99)
+    db().execute("UPDATE about_pillars SET title=?, description=?, icon=?, order_idx=? WHERE id=?",
+                 (title, desc, icon, order, pillar_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_PILLAR", "PILLAR", pillar_id, title)
+    flash(f"Pillar '{title}' updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-about")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/pillars/delete/<int:pillar_id>", methods=["POST"])
+@admin_required
+def admin_delete_pillar(pillar_id):
+    db().execute("DELETE FROM about_pillars WHERE id=?", (pillar_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_PILLAR", "PILLAR", pillar_id)
+    flash("Pillar deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-about")
+
+# ====================
+# FAQ CMS ACTIONS
+# ====================
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/faq-categories/add", methods=["POST"])
+@admin_required
+def admin_add_faq_category():
+    slug = request.form.get("slug", "").strip().lower()
+    title = request.form.get("title", "").strip()
+    order = int(request.form.get("order_idx", 99) or 99)
+    if slug and title:
+        db().execute("INSERT OR REPLACE INTO faq_categories(slug, title, order_idx) VALUES(?,?,?)", (slug, title, order))
+        db().commit()
+        log_admin_action(db(), session.get("admin_user"), "ADD_FAQ_CAT", "FAQ_CAT", "0", title)
+        flash(f"FAQ category '{title}' saved.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-faq")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/faq-categories/delete/<int:cat_id>", methods=["POST"])
+@admin_required
+def admin_delete_faq_category(cat_id):
+    db().execute("DELETE FROM faq_categories WHERE id=?", (cat_id,))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "DELETE_FAQ_CAT", "FAQ_CAT", cat_id)
+    flash("FAQ category deleted.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-faq")
 
 @app.route(f"/{ADMIN_SECRET_SLUG}/content/faq/add", methods=["POST"])
 @admin_required
@@ -867,12 +1743,26 @@ def admin_add_faq():
     cat = request.form.get("category_slug", "general").strip()
     q = request.form.get("question", "").strip()
     a = request.form.get("answer", "").strip()
+    order = int(request.form.get("order_idx", 99) or 99)
     if q and a:
-        db().execute("INSERT INTO faq_items(category_slug, question, answer, order_idx) VALUES(?, ?, ?, 99)", (cat, q, a))
+        db().execute("INSERT INTO faq_items(category_slug, question, answer, order_idx) VALUES(?, ?, ?, ?)", (cat, q, a, order))
         db().commit()
         log_admin_action(db(), session.get("admin_user"), "ADD_FAQ", "FAQ", "0", q)
-        flash("New FAQ item added successfully.")
-    return redirect(f"/{ADMIN_SECRET_SLUG}/content")
+        flash("New FAQ item added.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-faq")
+
+@app.route(f"/{ADMIN_SECRET_SLUG}/content/faq/edit/<int:faq_id>", methods=["POST"])
+@admin_required
+def admin_edit_faq(faq_id):
+    cat = request.form.get("category_slug", "").strip()
+    q = request.form.get("question", "").strip()
+    a = request.form.get("answer", "").strip()
+    order = int(request.form.get("order_idx", 99) or 99)
+    db().execute("UPDATE faq_items SET category_slug=?, question=?, answer=?, order_idx=? WHERE id=?", (cat, q, a, order, faq_id))
+    db().commit()
+    log_admin_action(db(), session.get("admin_user"), "EDIT_FAQ", "FAQ", faq_id, q)
+    flash("FAQ item updated.")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-faq")
 
 @app.route(f"/{ADMIN_SECRET_SLUG}/content/faq/delete/<int:faq_id>", methods=["POST"])
 @admin_required
@@ -881,7 +1771,7 @@ def admin_delete_faq(faq_id):
     db().commit()
     log_admin_action(db(), session.get("admin_user"), "DELETE_FAQ", "FAQ", faq_id)
     flash("FAQ item deleted.")
-    return redirect(f"/{ADMIN_SECRET_SLUG}/content")
+    return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-faq")
 
 @app.route(f"/{ADMIN_SECRET_SLUG}/export/teams")
 @admin_required

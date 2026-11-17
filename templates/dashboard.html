@@ -161,11 +161,12 @@
       <div class="fg" style="margin-bottom:20px;">
         <label>Project Track / Domain <span class="req">*</span></label>
         <select name="domain" required>
-          <option value="AI / Machine Learning" {{ 'selected' if team.domain == 'AI / Machine Learning' }}>AI / Machine Learning</option>
-          <option value="Web & Mobile App Development" {{ 'selected' if team.domain == 'Web & Mobile App Development' }}>Web &amp; Mobile App Development</option>
-          <option value="Cloud, DevOps & Cyber Security" {{ 'selected' if team.domain == 'Cloud, DevOps & Cyber Security' }}>Cloud, DevOps &amp; Cyber Security</option>
-          <option value="Web3 & Blockchain" {{ 'selected' if team.domain == 'Web3 & Blockchain' }}>Web3 &amp; Blockchain</option>
-          <option value="Open Innovation" {{ 'selected' if team.domain == 'Open Innovation' }}>Open Innovation</option>
+          {% for trk in tracks %}
+          <option value="{{ trk.title }}" {{ 'selected' if team.domain == trk.title }}>{{ trk.title }}</option>
+          {% endfor %}
+          {% if team.domain and team.domain not in (tracks|map(attribute='title')|list) %}
+          <option value="{{ team.domain }}" selected>{{ team.domain }}</option>
+          {% endif %}
         </select>
       </div>
       <p style="font-size:13px;color:#6b5d92;margin-bottom:16px;">

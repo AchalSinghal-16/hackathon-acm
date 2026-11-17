@@ -49,13 +49,21 @@ def init_about_faq_tables(db_path):
             # 1. about_info
             about_meta = [
                 ("headline", "Empowering Innovators. Building the Future."),
-                ("subheadline", "Central India's flagship 36-hour offline hackathon hosted by the ACM Student Chapter at Madhav Institute of Technology & Science (MITS), Gwalior."),
-                ("mission_p1", "ACM CodeNite 2027 is a high-octane 36-hour offline hackathon engineered to bring India's sharpest student developers, designers, and innovators under one roof. Our mission is to transform theoretical academic knowledge into tangible, deployable real-world software and hardware solutions."),
+                ("subheadline", "Central India's flagship 12-hour offline hackathon on January 17, 2027 hosted by the ACM Student Chapter at Madhav Institute of Technology & Science (MITS), Gwalior."),
+                ("acm_section_title", "What is ACM?"),
+                ("acm_badge", "The Global Computing Society"),
+                ("acm_sub", "Association for Computing Machinery · Advancing Computing as a Science & Profession"),
+                ("acm_desc_p1", "The Association for Computing Machinery (ACM) is the world's largest educational and scientific computing society, delivering resources that advance computing as a science and a profession. ACM brings together computing educators, researchers, and professionals to inspire dialogue, share technical resources, and address the grand challenges of the computing field."),
+                ("acm_desc_p2", "ACM provides the computing field's premier digital library, publishes leading journals and magazines, organizes top-tier international computing conferences, and awards the prestigious A.M. Turing Award — universally recognized as the 'Nobel Prize of Computing'."),
+                ("acm_chapter_title", "ACM Student Chapter @ MITS Gwalior"),
+                ("acm_chapter_desc", "Established at Madhav Institute of Technology & Science (MITS Gwalior, est. 1957), the ACM Student Chapter is a vibrant student-driven developer community dedicated to technical excellence. We empower student builders through high-velocity hackathons like CodeNite, open-source cohorts, algorithmic contests, and mentorship programs."),
+                ("acm_highlight", "A worldwide network uniting over 100,000+ computing professionals, researchers, and student builders across 190+ countries."),
+                ("mission_p1", "ACM CodeNite 2027 is a high-octane 12-hour offline hackathon engineered to bring India's sharpest student developers, designers, and innovators under one roof on January 17, 2027. Our mission is to transform theoretical academic knowledge into tangible, deployable real-world software solutions."),
                 ("mission_p2", "Hosted at the state-of-the-art campus of Madhav Institute of Technology & Science (MITS Gwalior, est. 1957), CodeNite is supported by leading industry partners, top technical mentors, and angel investors dedicated to fostering the next wave of tech founders."),
                 ("institute_name", "Madhav Institute of Technology & Science (MITS), Gwalior"),
                 ("chapter_name", "ACM Student Chapter, MITS Gwalior"),
-                ("stat_hours", "36"),
-                ("stat_prize", "₹2,50,000+"),
+                ("stat_hours", "12"),
+                ("stat_prize", "₹50,000+"),
                 ("stat_teams", "100+"),
                 ("stat_mentors", "20+")
             ]
@@ -63,7 +71,7 @@ def init_about_faq_tables(db_path):
 
             # 2. about_pillars
             pillars = [
-                ("36 Hours of Pure Innovation", "A high-intensity sprint where teams conceptualize, architect, code, and deploy functional prototypes from scratch overnight.", "bolt", 1),
+                ("12 Hours of Pure Innovation", "A high-intensity sprint where teams conceptualize, architect, code, and deploy functional prototypes from scratch.", "bolt", 1),
                 ("Round-the-Clock Mentorship", "Experienced engineers, tech leads, and startup founders on the floor 24/7 to help untangle bugs, architecture, and pitch decks.", "users", 2),
                 ("Zero-Cost Campus Hospitality", "Completely covered hospitality including buffet meals, midnight pizza, energy bars, and continuous tea and coffee stations.", "trophy", 3),
                 ("Industry & Investor Exposure", "Showcase your project directly before tech leaders, startup incubators, and corporate hiring managers for career-defining opportunities.", "globe", 4),
@@ -71,17 +79,6 @@ def init_about_faq_tables(db_path):
                 ("Inclusive Builder Community", "An open, respectful, and vibrant community bringing together coders, designers, hardware hackers, and domain researchers.", "sparkles", 6)
             ]
             c.executemany("INSERT INTO about_pillars(title, description, icon, order_idx) VALUES(?, ?, ?, ?)", pillars)
-
-            # 3. about_facilities
-            facilities = [
-                ("Gigabit Campus Network", "Dedicated gigabit optical fiber Wi-Fi and Ethernet LAN ports across all participant bays to ensure seamless development.", "globe", 1),
-                ("Uninterrupted Surge-Protected Power", "High-capacity power backups, UPS systems, and dedicated multi-plug strips at every individual team station.", "bolt", 2),
-                ("Quiet Rest & Rejuvenation Zones", "Air-conditioned resting rooms and gender-separated sleeping halls equipped with bedding for quick recharge power naps.", "home", 3),
-                ("24/7 Health & Safety", "Round-the-clock campus dispensary, medical attendants on call, and 24/7 institute security guards.", "shield", 4),
-                ("Midnight Chill & Gaming Arena", "Recreation lounge with mini coding trivia, music jams, and mental break games to keep spirits high through the night.", "sparkles", 5),
-                ("Cafeteria & Dining Hub", "Dedicated dining hall serving fresh hot breakfast, lunch, high tea, dinner, and late-night snacks.", "trophy", 6)
-            ]
-            c.executemany("INSERT INTO about_facilities(title, description, icon, order_idx) VALUES(?, ?, ?, ?)", facilities)
 
         # Check if faq data exists
         row_faq = c.execute("SELECT COUNT(*) FROM faq_items").fetchone()
@@ -100,9 +97,9 @@ def init_about_faq_tables(db_path):
             faqs = [
                 # General
                 ("general", "What is ACM CodeNite 2027?",
-                 "ACM CodeNite 2027 is Central India's premier 36-hour national offline hackathon organized by the ACM Student Chapter at Madhav Institute of Technology & Science (MITS), Gwalior. Teams of 4 to 6 students build working prototypes over 36 hours to solve real-world problems.", 1),
+                 "ACM CodeNite 2027 is Central India's premier 12-hour national offline hackathon organized by the ACM Student Chapter at Madhav Institute of Technology & Science (MITS), Gwalior. Teams of 4 to 6 students build working prototypes over 12 hours on January 17, 2027 to solve real-world problems.", 1),
                 ("general", "When and where is the hackathon taking place?",
-                 "The hackathon will take place offline from March 20 to March 22, 2027 at the MITS Campus and Innovation Labs, Gwalior (Madhya Pradesh).", 2),
+                 "The hackathon will take place offline on Sunday, January 17, 2027 at the MITS Campus and Innovation Labs, Gwalior (Madhya Pradesh).", 2),
                 ("general", "Is the hackathon completely offline / in-person?",
                  "Yes! ACM CodeNite 2027 is a 100% in-person, on-campus hackathon. Teams must be physically present at MITS Gwalior for check-in, build sprint, mentorship rounds, and final jury presentations.", 3),
                 ("general", "Is there a registration fee to participate?",

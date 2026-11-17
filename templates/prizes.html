@@ -14,9 +14,9 @@
     </p>
 
     <div class="prize-stats-strip">
-      <div class="stat-pill">{{ icon('trophy') }} Total Prize Pool: <b>{{ overview.get('total_pool', '₹2,50,000+') }}</b></div>
-      <div class="stat-pill">{{ icon('bolt') }} Direct Cash Awards: <b>{{ overview.get('cash_pool', '₹2,00,000') }}</b></div>
-      <div class="stat-pill">{{ icon('globe') }} Cloud Credits &amp; Tools: <b>{{ overview.get('perks_val', '₹50,000+') }}</b></div>
+      <div class="stat-pill">{{ icon('trophy') }} Total Prize Pool: <b>{{ overview.get('total_pool', '₹50,000+') }}</b></div>
+      <div class="stat-pill">{{ icon('bolt') }} Direct Cash Awards: <b>{{ overview.get('cash_pool', '₹50,000') }}</b></div>
+      <div class="stat-pill">{{ icon('globe') }} Cloud Credits &amp; Tools: <b>{{ overview.get('perks_val', 'Exciting Goodies & Perks') }}</b></div>
       <div class="stat-pill">{{ icon('users') }} <b>Paid Internship Interviews</b></div>
       <div class="stat-pill">{{ icon('check') }} <b>Swag Boxes &amp; Verified Certificates</b></div>
     </div>
@@ -58,34 +58,7 @@
     {% endfor %}
   </div>
 
-  <!-- SECTION 2: TRACK & SPECIAL CATEGORY AWARDS -->
-  <div class="sec-head" style="margin-top:60px;">
-    <span class="sec-badge">{{ icon('bolt') }} Category Bounties</span>
-    <h2 class="sec-title">Track &amp; Special <em>Awards</em></h2>
-    <p class="sec-sub">Specialized awards celebrating domain mastery, freshman grit, and social impact. Stackable with podium prizes!</p>
-  </div>
-
-  <div class="category-prizes-grid">
-    {% for cat in categories %}
-    <div class="category-prize-card" style="border-left: 4px solid {{ cat.color_accent or '#8b5cf6' }};">
-      <div class="cat-card-header">
-        <div class="cat-icon-box" style="color:{{ cat.color_accent or '#8b5cf6' }};background:rgba(168,85,247,.12);">
-          {{ icon(cat.icon) }}
-        </div>
-        <div style="flex:1;">
-          <span class="cat-tag" style="color:{{ cat.color_accent or '#8b5cf6' }};">{{ cat.tag }}</span>
-          <h3 class="cat-title">{{ cat.title }}</h3>
-        </div>
-        <div class="cat-amount-pill">
-          {{ cat.amount }}
-        </div>
-      </div>
-      <p class="cat-desc">{{ cat.description }}</p>
-    </div>
-    {% endfor %}
-  </div>
-
-  <!-- SECTION 3: PERKS FOR ALL ATTENDEES -->
+  <!-- SECTION 2: PERKS FOR ALL ATTENDEES -->
   <div class="sec-head" style="margin-top:60px;">
     <span class="sec-badge">{{ icon('sparkles') }} Participation Bounty</span>
     <h2 class="sec-title">Perks for <em>Every Participant</em></h2>
@@ -104,7 +77,7 @@
     {% endfor %}
   </div>
 
-  <!-- SECTION 4: PRIZE RULES & DISBURSEMENT TERMS -->
+  <!-- SECTION 3: PRIZE RULES & DISBURSEMENT TERMS -->
   <div class="sec-head" style="margin-top:60px;">
     <span class="sec-badge">{{ icon('doc') }} Guidelines</span>
     <h2 class="sec-title">Disbursement &amp; <em>Terms</em></h2>
@@ -187,17 +160,6 @@
 .podium-perks-list ul{list-style:none;display:grid;gap:10px;padding-left:0;}
 .podium-perks-list li{font-size:13.5px;color:#35295c;display:flex;align-items:flex-start;gap:10px;line-height:1.45;}
 .podium-perks-list li .i{color:#16a34a;font-size:16px;flex-shrink:0;margin-top:2px;}
-
-/* CATEGORY PRIZES GRID */
-.category-prizes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:22px;}
-.category-prize-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.2);border-radius:22px;padding:24px 26px;box-shadow:0 10px 30px rgba(109,40,217,.05);transition:all .2s;}
-.category-prize-card:hover{border-color:rgba(168,85,247,.5);transform:translateY(-2px);}
-.cat-card-header{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
-.cat-icon-box{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:24px;flex-shrink:0;}
-.cat-tag{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:2px;}
-.cat-title{font-size:17.5px;font-weight:800;color:#0d0a1f;}
-.cat-amount-pill{background:#ede7fd;border:1.5px solid #c4b5fd;color:#5b1ed6;font-size:17px;font-weight:800;padding:6px 14px;border-radius:16px;white-space:nowrap;}
-.cat-desc{font-size:14px;color:#514574;line-height:1.55;}
 
 /* PERKS ALL GRID */
 .perks-all-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;}
