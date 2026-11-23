@@ -1,0 +1,9 @@
+{
+  "name": "hackathon-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Flask native frontend build placeholder for Render compatibility",
+  "scripts": {
+    "build": "node -e \"console.log('Using native Flask templates and static assets')\""
+  }
+}
