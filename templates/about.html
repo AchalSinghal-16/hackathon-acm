@@ -1,5 +1,5 @@
 {% extends 'base.html' %}{% block main %}
-<div class="reg-container" style="max-width:1480px;padding-top:24px;">
+<div class="reg-container">
 
   <!-- ABOUT HERO BANNER -->
   <div class="about-hero">
@@ -145,7 +145,8 @@
 
 /* STORY GRID (2 COLUMNS) */
 .story-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:24px;}
-.story-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.25);border-radius:24px;padding:34px 30px;box-shadow:0 12px 35px rgba(109,40,217,.06);display:flex;flex-direction:column;}
+.story-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.25);border-radius:24px;padding:34px 30px;box-shadow:0 12px 35px rgba(109,40,217,.06);display:flex;flex-direction:column;transition:all .3s cubic-bezier(0.16,1,0.3,1);}
+.story-card:hover{transform:translateY(-5px);box-shadow:0 20px 45px rgba(109,40,217,.12);border-color:#a855f7;}
 .story-icon{width:52px;height:52px;border-radius:16px;background:#ede7fd;color:var(--primary);display:grid;place-items:center;font-size:26px;margin-bottom:16px;}
 .story-title{font-size:22px;font-weight:800;color:#0d0a1f;margin-bottom:12px;}
 .story-text{font-size:15px;color:#4c416e;line-height:1.65;margin-bottom:18px;}
@@ -155,8 +156,8 @@
 
 /* PILLARS GRID */
 .pillars-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;}
-.pillar-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:22px;padding:26px 24px;box-shadow:0 10px 30px rgba(109,40,217,.05);transition:all .2s;}
-.pillar-card:hover{border-color:var(--primary);transform:translateY(-2px);background:#fcfaff;}
+.pillar-card{background:#ffffff;border:1.5px solid rgba(168,85,247,.22);border-radius:22px;padding:26px 24px;box-shadow:0 10px 30px rgba(109,40,217,.05);transition:all .25s cubic-bezier(0.16,1,0.3,1);}
+.pillar-card:hover{border-color:var(--primary);transform:translateY(-4px);box-shadow:0 16px 40px rgba(109,40,217,.1);background:#fcfaff;}
 .pillar-icon-box{width:48px;height:48px;border-radius:16px;background:#ede7fd;color:var(--primary);display:grid;place-items:center;font-size:24px;margin-bottom:14px;}
 .pillar-title{font-size:18px;font-weight:800;color:#0d0a1f;margin-bottom:8px;}
 .pillar-desc{font-size:14px;color:#554a78;line-height:1.55;}

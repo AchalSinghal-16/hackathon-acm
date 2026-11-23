@@ -1,5 +1,5 @@
 {% extends 'base.html' %}{% block main %}
-<div class="reg-container" style="max-width:1040px;">
+<div class="reg-container" style="max-width:1100px;">
 
   {% if team %}
   <!-- 1. TEAM HEADER CARD -->
@@ -8,7 +8,7 @@
       <div>
         <span class="reg-badge" style="margin-bottom:8px;">{{ icon('trophy') }} {{ team.domain or 'General' }}</span>
         <h1 style="font-size:clamp(30px,5vw,42px);font-weight:800;color:#0f0b24;margin:4px 0 6px;">{{ team.name }}</h1>
-        <p style="font-size:14px;color:#6b5d92;">Registered on {{ team.created_at[:10] if team.created_at else 'CodeNite 2027' }}</p>
+        <p style="font-size:14px;color:#6b5d92;">Registered on {{ (team.created_at|string)[:10] if team.created_at else 'CodeNite 2027' }}</p>
       </div>
 
       <!-- EDIT TEAM BUTTON -->

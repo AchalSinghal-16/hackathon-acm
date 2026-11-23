@@ -1,6 +1,10 @@
 import os, sqlite3, secrets, time
 from datetime import datetime, timezone, timedelta
 from functools import wraps
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, g, abort, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -15,6 +19,7 @@ from admin_core import (
     generate_teams_csv,
     ADMIN_SECRET_SLUG
 )
+from db import get_connection
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-change-me")
@@ -172,7 +177,7 @@ def evaluate_round_timing(round_dict, now_ist=None):
 
 def db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB); g.db.row_factory = sqlite3.Row
+        g.db = get_connection(app.instance_path)
     return g.db
 
 @app.teardown_appcontext
@@ -180,53 +185,64 @@ def close(_):
     d = g.pop("db", None)
     if d: d.close()
 
-with sqlite3.connect(DB) as c:
-    c.executescript("""
-    CREATE TABLE IF NOT EXISTS users(
-        id INTEGER PRIMARY KEY,
-        name TEXT,
-        email TEXT UNIQUE,
-        pw TEXT,
-        role TEXT DEFAULT 'participant'
-    );
-    CREATE TABLE IF NOT EXISTS teams(
-        id INTEGER PRIMARY KEY,
-        team_id TEXT UNIQUE,
-        team_pw TEXT,
-        owner INTEGER UNIQUE,
-        name TEXT,
-        domain TEXT,
-        payment_screenshot TEXT,
-        payment_status TEXT DEFAULT 'Pending Verification',
-        terms_agreed INTEGER DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    CREATE TABLE IF NOT EXISTS members(
-        id INTEGER PRIMARY KEY,
-        team INTEGER,
-        is_leader INTEGER DEFAULT 0,
-        fname TEXT,
-        lname TEXT,
-        email TEXT,
-        phone TEXT,
-        gender TEXT,
-        college TEXT,
-        course TEXT,
-        branch TEXT,
-        duration TEXT,
-        year TEXT,
-        grad_year TEXT,
-        enrollment TEXT,
-        FOREIGN KEY(team) REFERENCES teams(id) ON DELETE CASCADE
-    );
-    """)
-init_event_tables(DB)
-init_prize_tables(DB)
-init_about_faq_tables(DB)
-init_admin_tables(DB)
+try:
+    with sqlite3.connect(DB) as c:
+        c.executescript("""
+        CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            email TEXT UNIQUE,
+            pw TEXT,
+            role TEXT DEFAULT 'participant'
+        );
+        CREATE TABLE IF NOT EXISTS teams(
+            id INTEGER PRIMARY KEY,
+            team_id TEXT UNIQUE,
+            team_pw TEXT,
+            owner INTEGER UNIQUE,
+            name TEXT,
+            domain TEXT,
+            payment_screenshot TEXT,
+            payment_status TEXT DEFAULT 'Pending Verification',
+            terms_agreed INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS members(
+            id INTEGER PRIMARY KEY,
+            team INTEGER,
+            is_leader INTEGER DEFAULT 0,
+            fname TEXT,
+            lname TEXT,
+            email TEXT,
+            phone TEXT,
+            gender TEXT,
+            college TEXT,
+            course TEXT,
+            branch TEXT,
+            duration TEXT,
+            year TEXT,
+            grad_year TEXT,
+            enrollment TEXT,
+            FOREIGN KEY(team) REFERENCES teams(id) ON DELETE CASCADE
+        );
+        """)
+    init_event_tables(DB)
+    init_prize_tables(DB)
+    init_about_faq_tables(DB)
+    init_admin_tables(DB)
+except Exception as e:
+    pass
+
+@app.route("/api/ping")
+def ping():
+    return {
+        "status": "ok",
+        "message": "ACM CodeNite 2027 engine active",
+        "ist": get_current_ist().strftime("%Y-%m-%d %H:%M:%S")
+    }, 200
 
 def generate_team_credentials():
-    with sqlite3.connect(DB) as c:
+    with get_connection(app.instance_path) as c:
         row = c.execute("SELECT count(*) FROM teams").fetchone()
         num = 1001 + (row[0] if row else 0)
         while c.execute("SELECT 1 FROM teams WHERE team_id=?", (f"CN-{num}",)).fetchone():
@@ -1285,10 +1301,11 @@ def admin_edit_track(track_id):
 @app.route(f"/{ADMIN_SECRET_SLUG}/content/tracks/delete/<int:track_id>", methods=["POST"])
 @admin_required
 def admin_delete_track(track_id):
+    db().execute("DELETE FROM event_problems WHERE track_id=?", (track_id,))
     db().execute("DELETE FROM event_tracks WHERE id=?", (track_id,))
     db().commit()
     log_admin_action(db(), session.get("admin_user"), "DELETE_TRACK", "TRACK", track_id)
-    flash("Track deleted.")
+    flash("Track and its associated problem statements deleted successfully.")
     return redirect(f"/{ADMIN_SECRET_SLUG}/content#tab-events")
 
 @app.route(f"/{ADMIN_SECRET_SLUG}/content/problems/add", methods=["POST"])
