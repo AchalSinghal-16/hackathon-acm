@@ -234,12 +234,47 @@ except Exception as e:
     pass
 
 @app.route("/api/ping")
+@app.route("/api/health")
+@app.route("/api/status")
 def ping():
     return {
         "status": "ok",
         "message": "ACM CodeNite 2027 engine active",
         "ist": get_current_ist().strftime("%Y-%m-%d %H:%M:%S")
     }, 200
+
+@app.route("/api/events")
+def api_events():
+    """Endpoint for uptime monitors (e.g. Better Uptime) and API clients to prevent Render sleep."""
+    try:
+        info_rows = db().execute("SELECT key, value FROM event_info").fetchall()
+        info = {r["key"]: r["value"] for r in info_rows} if info_rows else {}
+        schedule = [dict(r) for r in db().execute("SELECT * FROM event_schedule ORDER BY order_idx, id").fetchall()]
+        tracks = [dict(r) for r in db().execute("SELECT * FROM event_tracks ORDER BY order_idx, id").fetchall()]
+        return {
+            "status": "ok",
+            "message": "Events API active and healthy",
+            "info": info,
+            "schedule_count": len(schedule),
+            "tracks_count": len(tracks),
+            "ist": get_current_ist().strftime("%Y-%m-%d %H:%M:%S")
+        }, 200
+    except Exception as e:
+        return {
+            "status": "ok",
+            "message": "Events API active",
+            "error": str(e),
+            "ist": get_current_ist().strftime("%Y-%m-%d %H:%M:%S")
+        }, 200
+
+@app.route("/api/prizes")
+def api_prizes():
+    try:
+        rows = db().execute("SELECT * FROM prize_categories ORDER BY order_idx, id").fetchall()
+        prizes = [dict(r) for r in rows] if rows else []
+        return {"status": "ok", "prizes_count": len(prizes)}, 200
+    except Exception:
+        return {"status": "ok", "prizes_count": 0}, 200
 
 def generate_team_credentials():
     with get_connection(app.instance_path) as c:
